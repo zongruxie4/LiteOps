@@ -1,0 +1,8 @@
+[client]
+#host = 127.0.0.1
+host = mysql
+port = 3306
+database = liteops
+user = root
+password = 1234567xx
+default-character-set = utf8mb4

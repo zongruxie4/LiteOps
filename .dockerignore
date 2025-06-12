@@ -1,0 +1,70 @@
+# 通用忽略
+.git
+.gitignore
+.DS_Store
+.env
+.env.*
+.vscode
+.idea
+*.swp
+*.swo
+README.md
+LICENSE
+
+# 前端忽略
+web/node_modules
+web/.vscode
+web/.idea
+web/coverage
+web/npm-debug.log
+web/yarn-debug.log
+web/yarn-error.log
+web/pnpm-debug.log
+web/.env.local
+web/.env.development.local
+web/.env.test.local
+web/.env.production.local
+# 注意：不要忽略web/dist目录，因为我们需要将其复制到容器中
+
+# 后端忽略
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/**/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/env/
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/db.sqlite3
+backend/media
+backend/logs/
+backend/backups/
+
+# 过滤掉migrations文件，但保留__init__.py
+backend/*/migrations/*
+!backend/*/migrations/__init__.py
+
+# 其他文件
+Dockerfile
+docker-compose.yml
+.dockerignore
+start-containers.sh
+verify-docker.sh
+DOCKER_IN_DOCKER.md
+# 不要忽略启动脚本
+!docker-entrypoint.sh
+!ci-entrypoint-dind.sh
