@@ -50,7 +50,7 @@ LiteOps采用前后端分离的架构设计：
 - **Ant Design Vue 4.x**：基于Vue的UI组件库
 - **Axios**：基于Promise的HTTP客户端
 - **Vue Router**：Vue官方路由管理器
-- **AntV G2**：数据可视化图表库
+- **echarts**：数据可视化图表库
 
 ### 后端技术栈
 
@@ -61,9 +61,32 @@ LiteOps采用前后端分离的架构设计：
 - **Python-GitLab**：GitLab API客户端
 - **JWT认证**：用户身份验证
 
-### 部署方案
+### 部署架构
 
-- **Docker**：容器化部署
+LiteOps采用容器化部署方案，主要包含以下组件：
+
+```
+┌─────────────────────┐    ┌─────────────────────┐
+│   Nginx (Port 80)   │    │  Django (Port 8900) │
+│   静态文件服务        │◄───┤  后端API服务         │
+└─────────────────────┘    └─────────────────────┘
+                                       │
+                           ┌─────────────────────┐
+                           │  MySQL (Port 3306)  │
+                           │  数据库服务          │
+                           └─────────────────────┘
+                                       │
+                           ┌─────────────────────┐
+                           │  Docker in Docker   │
+                           │  CI/CD构建环境       │
+                           └─────────────────────┘
+```
+
+**部署特点**：
+- **Docker**：容器化部署，环境一致性
+- **Docker in Docker**：支持CI/CD构建环境，完全隔离
+- **一键部署**：自动化脚本部署，简化操作流程
+- **多阶段构建**：优化镜像大小，提高构建效率
 
 ## 项目目标
 
@@ -84,9 +107,115 @@ LiteOps主要适用于以下场景：
 - 希望减少手动操作、提高效率的开发环境
 - 对现有工具不满意，需要更贴合实际工作流程的解决方案
 
-## 项目当前状态与未来规划
+## 🚀 快速部署
 
-LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但仍有许多需求和功能有待完善，如实现部署k8s项目。我希望通过开放的方式收集更多的需求和建议，使这个项目能够更好地服务于实际开发场景。
+### 前置要求
+
+在开始部署之前，请确保您的系统满足以下要求：
+
+- **操作系统**：Linux (推荐 Ubuntu 20.04+、CentOS 7+)
+- **Docker**：版本 20.0+ 
+- **Docker Compose**：版本 2.0+
+- **磁盘空间**：至少 5GB 可用空间
+- **内存**：推荐 4GB
+- **网络**：能够访问 Docker Hub 和相关软件源
+
+### 快速开始
+
+#### 1. 获取部署文件
+
+您需要获取以下部署文件：
+
+- `start-containers.sh` - 一键部署脚本
+- `liteops_init.sql` - 数据库初始化文件
+- `liteops` - Docker镜像
+
+#### 2. 获取Docker镜像
+
+```bash
+# 拉取LiteOps镜像（如果有公开镜像仓库）
+docker pull liteops:v1
+
+# 或者从提供的镜像文件加载
+# docker load < liteops-v1.tar
+```
+
+#### 3. 准备部署文件
+
+创建部署目录并放置必要文件：
+
+```bash
+# 创建部署目录
+mkdir liteops-deploy
+cd liteops-deploy
+
+# 将以下文件放入此目录：
+# - start-containers.sh
+# - liteops_init.sql
+```
+
+#### 4. 一键部署
+
+使用提供的启动脚本进行自动化部署：
+
+```bash
+# 给启动脚本执行权限
+chmod +x start-containers.sh
+
+# 执行一键部署
+./start-containers.sh
+```
+
+启动脚本会自动完成以下操作：
+
+
+#### 5. 验证部署
+
+部署完成后，您可以通过以下方式验证：
+
+```bash
+# 检查容器状态
+docker ps
+
+# 检查日志
+docker logs liteops
+🐳 启动 Docker in Docker 环境...
+🚀 启动 Docker daemon (轻量级CI/CD模式)...
+⏳ 等待 Docker daemon 启动...
+time="2025-06-13T02:15:10.086745884Z" level=warning msg="CDI setup error /etc/cdi: failed to monitor for changes: no such file or directory"
+time="2025-06-13T02:15:10.086771075Z" level=warning msg="CDI setup error /var/run/cdi: failed to monitor for changes: no such file or directory"
+✅ Docker daemon 启动成功
+🔍 验证 Docker 功能...
+✅ Docker daemon 版本: 28.2.2
+✅ 存储驱动: vfs
+🎉 Docker in Docker 环境启动完成 (轻量级CI/CD模式)
+Starting nginx...
+Starting nginx: nginx.
+Starting backend service...
+INFO:     Started server process [188]
+INFO:     Waiting for application startup.
+INFO:     ASGI 'lifespan' protocol appears unsupported.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8900 (Press CTRL+C to quit)
+docker logs liteops-mysql
+```
+
+### 访问应用
+
+部署成功后，您可以通过以下地址访问：
+
+- **前端界面**：http://localhost
+- **后端API**：http://localhost:8900/api/
+- **MySQL数据库**：localhost:3306
+
+### 默认登录信息
+
+- **用户名**：admin
+- **密码**：admin123 (初始密码)
+
+## 项目当前状态
+
+LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但仍有许多需求和功能有待完善，。我希望通过开放的方式收集更多的需求和建议，使这个项目能够更好地服务于实际开发场景。
 
 ### 需求征集
 

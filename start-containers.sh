@@ -39,6 +39,53 @@ print_step() {
     echo -e "\n${PURPLE}=== $1 ===${NC}"
 }
 
+# 等待MySQL就绪的函数
+wait_for_mysql() {
+    local max_attempts=30
+    local attempt=1
+    
+    print_info "等待MySQL服务完全启动..."
+    
+    while [ $attempt -le $max_attempts ]; do
+        if docker exec $MYSQL_CONTAINER mysqladmin ping -uroot -p$MYSQL_PASSWORD --silent >/dev/null 2>&1; then
+            print_success "MySQL服务已就绪 (尝试次数: $attempt)"
+            return 0
+        fi
+        
+        print_info "MySQL还未就绪，等待中... (尝试 $attempt/$max_attempts)"
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    
+    print_error "MySQL在 $((max_attempts * 2)) 秒内未能就绪"
+    return 1
+}
+
+# 导入SQL文件的函数
+import_sql_with_retry() {
+    local max_attempts=3
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        print_info "尝试导入初始化数据 (尝试 $attempt/$max_attempts)..."
+        
+        if docker exec -i $MYSQL_CONTAINER mysql -uroot -p$MYSQL_PASSWORD liteops < liteops_init.sql; then
+            print_success "初始化数据导入成功"
+            return 0
+        else
+            print_warning "初始化数据导入失败，尝试 $attempt/$max_attempts"
+            if [ $attempt -lt $max_attempts ]; then
+                print_info "等待5秒后重试..."
+                sleep 5
+            fi
+            attempt=$((attempt + 1))
+        fi
+    done
+    
+    print_error "初始化数据导入失败，已尝试 $max_attempts 次"
+    return 1
+}
+
 # 创建Docker网络（如果不存在）
 print_step "创建Docker网络"
 if ! docker network inspect $NETWORK_NAME >/dev/null 2>&1; then
@@ -56,17 +103,6 @@ docker stop $CONTAINER_NAME $MYSQL_CONTAINER 2>/dev/null || true
 docker rm $CONTAINER_NAME $MYSQL_CONTAINER 2>/dev/null || true
 print_success "容器清理完成"
 
-# 构建镜像
-print_step "构建应用镜像"
-print_info "构建LiteOps镜像..."
-# 确保前端已经构建
-if [ ! -d "web/dist" ]; then
-    print_error "前端dist目录不存在，请先运行 npm run build"
-    exit 1
-fi
-docker build --platform linux/amd64 -t $CONTAINER_IMAGE .
-print_success "镜像构建成功: $CONTAINER_IMAGE"
-
 # 启动MySQL容器
 print_step "启动MySQL容器"
 print_info "启动MySQL $MYSQL_VERSION 容器..."
@@ -78,14 +114,18 @@ docker run -d \
     -e MYSQL_DATABASE=liteops \
     mysql:$MYSQL_VERSION
 
-# 等待MySQL启动
-print_info "等待MySQL启动..."
-sleep 10
+# 等待MySQL完全就绪
+if ! wait_for_mysql; then
+    print_error "MySQL启动失败，退出部署"
+    exit 1
+fi
 
 # 初始化数据库
 print_step "初始化数据库"
-print_info "导入初始数据..."
-docker exec -i $MYSQL_CONTAINER mysql -uroot -p$MYSQL_PASSWORD liteops < liteops_init.sql
+if ! import_sql_with_retry; then
+    print_error "数据库初始化失败，退出部署"
+    exit 1
+fi
 print_success "数据库初始化完成"
 
 # 启动应用容器

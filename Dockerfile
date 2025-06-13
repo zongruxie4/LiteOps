@@ -217,7 +217,7 @@ COPY --from=builder /usr/local/maven /usr/local/maven
 WORKDIR /app
 
 # 配置Nginx - 复制自定义配置文件
-COPY web/nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # 复制前端构建文件到Nginx静态文件目录
