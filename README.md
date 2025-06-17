@@ -34,56 +34,56 @@ LiteOps的核心特点是"实用、贴合需求、易于使用"：
 ### 仪表板
 <div align="center">
 <img src="image/dashboard.png" alt="仪表板" width="80%"/>
-<p><em>系统仪表板 - 整体概览，快速查看系统状态</em></p>
+<p>系统仪表板 - 整体概览，快速查看系统状态</p>
 </div>
 
 ### 项目管理
 <div align="center">
 <img src="image/projects_list.png" alt="项目列表" width="80%"/>
-<p><em>项目列表 - 统一管理所有项目，简洁明了</em></p>
+<p><em>项目列表 - 统一管理所有项目</em></p>
 </div>
 
 ### 构建任务
 <div align="center">
 <img src="image/build_tasks.png" alt="构建任务" width="80%"/>
-<p><em>构建任务 - 手动触发构建</em></p>
+<p>构建任务 - 手动触发构建</p>
 </div>
 
 <div align="center">
 <img src="image/build_execution.png" alt="构建需求" width="80%"/>
-<p><em>构建任务 - 填写构建需求</em></p>
+<p>构建任务 - 填写构建需求</p>
 </div>
 
 <div align="center">
 <img src="image/build_tasks_log.png" alt="构建日志" width="80%"/>
-<p><em>构建日志 - 实时查看构建过程和结果</em></p>
+<p>构建日志 - 实时查看构建过程和结果</p>
 </div>
 
 ### 构建历史
 <div align="center">
 <img src="image/build_history1.png" alt="构建历史1" width="80%"/>
-<p><em>构建历史 - 阶段错误状态追踪</em></p>
+<p>构建历史 - 阶段错误状态追踪</p>
 </div>
 
 <div align="center">
 <img src="image/build_history2.png" alt="构建历史2" width="80%"/>
-<p><em>构建记录详情 - 暂停状态追踪</em></p>
+<p>构建记录详情 - 暂停状态追踪</p>
 </div>
 
 <div align="center">
 <img src="image/build_history3.png" alt="构建历史3" width="80%"/>
-<p><em>构建历史日志</em></p>
+<p>构建历史日志</p>
 </div>
 
 ### 系统配置
 <div align="center">
 <img src="image/system_basic.png" alt="系统设置" width="80%"/>
-<p><em>系统基础设置 - 灵活的系统配置管理</em></p>
+<p>系统基础设置 - 灵活的系统配置管理</p>
 </div>
 
 <div align="center">
 <img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="80%"/>
-<p><em>凭据管理 - 安全的凭据和配置文件管理</em></p>
+<p>凭据管理 - 安全的凭据和配置文件管理</p>
 </div>
 
 ## 项目背景
