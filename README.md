@@ -40,7 +40,7 @@ LiteOps的核心特点是"实用、贴合需求、易于使用"：
 ### 项目管理
 <div align="center">
 <img src="image/projects_list.png" alt="项目列表" width="80%"/>
-<p><em>项目列表 - 统一管理所有项目</em></p>
+<p>项目列表 - 统一管理所有项目</p>
 </div>
 
 ### 构建任务
