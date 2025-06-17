@@ -31,60 +31,58 @@ LiteOps的核心特点是"实用、贴合需求、易于使用"：
 
 ## 功能预览
 
-### 仪表板
-<div align="center">
-<img src="image/dashboard.png" alt="仪表板" width="80%"/>
-<p>系统仪表板 - 整体概览，快速查看系统状态</p>
-</div>
-
-### 项目管理
-<div align="center">
-<img src="image/projects_list.png" alt="项目列表" width="80%"/>
-<p>项目列表 - 统一管理所有项目</p>
-</div>
-
-### 构建任务
-<div align="center">
-<img src="image/build_tasks.png" alt="构建任务" width="80%"/>
-<p>构建任务 - 手动触发构建</p>
-</div>
-
-<div align="center">
-<img src="image/build_execution.png" alt="构建需求" width="80%"/>
-<p>构建任务 - 填写构建需求</p>
-</div>
-
-<div align="center">
-<img src="image/build_tasks_log.png" alt="构建日志" width="80%"/>
-<p>构建日志 - 实时查看构建过程和结果</p>
-</div>
-
-### 构建历史
-<div align="center">
-<img src="image/build_history1.png" alt="构建历史1" width="80%"/>
-<p>构建历史 - 阶段错误状态追踪</p>
-</div>
-
-<div align="center">
-<img src="image/build_history2.png" alt="构建历史2" width="80%"/>
-<p>构建记录详情 - 暂停状态追踪</p>
-</div>
-
-<div align="center">
-<img src="image/build_history3.png" alt="构建历史3" width="80%"/>
-<p>构建历史日志</p>
-</div>
-
-### 系统配置
-<div align="center">
-<img src="image/system_basic.png" alt="系统设置" width="80%"/>
-<p>系统基础设置 - 灵活的系统配置管理</p>
-</div>
-
-<div align="center">
-<img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="80%"/>
-<p>凭据管理 - 安全的凭据和配置文件管理</p>
-</div>
+<table align="center" width="100%">
+  <tr>
+    <td align="center" width="50%">
+      <img src="image/dashboard.png" alt="仪表板" width="90%"/>
+      <p><strong>系统仪表板</strong><br/>整体概览，快速查看系统状态</p>
+    </td>
+    <td align="center" width="50%">
+      <img src="image/projects_list.png" alt="项目列表" width="90%"/>
+      <p><strong>项目管理</strong><br/>统一管理所有项目</p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="image/build_tasks.png" alt="构建任务" width="90%"/>
+      <p><strong>构建任务</strong><br/>手动触发构建</p>
+    </td>
+    <td align="center">
+      <img src="image/build_execution.png" alt="构建需求" width="90%"/>
+      <p><strong>构建需求</strong><br/>填写构建需求</p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="image/build_tasks_log.png" alt="构建日志" width="90%"/>
+      <p><strong>构建日志</strong><br/>实时查看构建过程和结果</p>
+    </td>
+    <td align="center">
+      <img src="image/build_history1.png" alt="构建历史1" width="90%"/>
+      <p><strong>构建历史</strong><br/>阶段错误状态追踪</p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="image/build_history2.png" alt="构建历史2" width="90%"/>
+      <p><strong>构建详情</strong><br/>暂停状态追踪</p>
+    </td>
+    <td align="center">
+      <img src="image/build_history3.png" alt="构建历史3" width="90%"/>
+      <p><strong>构建历史日志</strong><br/>详细日志记录</p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="image/system_basic.png" alt="系统设置" width="90%"/>
+      <p><strong>系统基础设置</strong><br/>灵活的系统配置管理</p>
+    </td>
+    <td align="center">
+      <img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="90%"/>
+      <p><strong>凭据管理</strong><br/>安全的凭据和配置文件管理</p>
+    </td>
+  </tr>
+</table>
 
 ## 项目背景
 
