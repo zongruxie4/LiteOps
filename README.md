@@ -29,6 +29,63 @@ LiteOps的核心特点是"实用、贴合需求、易于使用"：
 - **贴合需求**：针对团队缺少的功能进行定制开发，填补工作流程中的空白
 - **易于使用**：简洁直观的界面设计，降低使用门槛，减少学习成本，倾向于Jenkins 自由风格Job
 
+## 功能预览
+
+### 仪表板
+<div align="center">
+<img src="image/dashboard.png" alt="仪表板" width="80%"/>
+<p><em>系统仪表板 - 整体概览，快速查看系统状态</em></p>
+</div>
+
+### 项目管理
+<div align="center">
+<img src="image/projects_list.png" alt="项目列表" width="80%"/>
+<p><em>项目列表 - 统一管理所有项目，简洁明了</em></p>
+</div>
+
+### 构建任务
+<div align="center">
+<img src="image/build_tasks.png" alt="构建任务" width="80%"/>
+<p><em>构建任务 - 手动触发构建</em></p>
+</div>
+
+<div align="center">
+<img src="image/build_execution.png" alt="构建需求" width="80%"/>
+<p><em>构建任务 - 填写构建需求</em></p>
+</div>
+
+<div align="center">
+<img src="image/build_tasks_log.png" alt="构建日志" width="80%"/>
+<p><em>构建日志 - 实时查看构建过程和结果</em></p>
+</div>
+
+### 构建历史
+<div align="center">
+<img src="image/build_history1.png" alt="构建历史1" width="80%"/>
+<p><em>构建历史 - 阶段错误状态追踪</em></p>
+</div>
+
+<div align="center">
+<img src="image/build_history2.png" alt="构建历史2" width="80%"/>
+<p><em>构建记录详情 - 暂停状态追踪</em></p>
+</div>
+
+<div align="center">
+<img src="image/build_history3.png" alt="构建历史3" width="80%"/>
+<p><em>构建历史日志</em></p>
+</div>
+
+### 系统配置
+<div align="center">
+<img src="image/system_basic.png" alt="系统设置" width="80%"/>
+<p><em>系统基础设置 - 灵活的系统配置管理</em></p>
+</div>
+
+<div align="center">
+<img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="80%"/>
+<p><em>凭据管理 - 安全的凭据和配置文件管理</em></p>
+</div>
+
 ## 项目背景
 
 在日常开发工作中，我发现现有的工作流程存在一些功能缺失。市面上的CI/CD工具虽然功能丰富，但往往存在以下问题：
