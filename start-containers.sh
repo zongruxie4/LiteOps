@@ -10,7 +10,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # 无颜色
 
 # 设置变量
-CONTAINER_IMAGE="liteops:v1"
+CONTAINER_IMAGE="liteops/liteops:v1"
 CONTAINER_NAME="liteops"
 MYSQL_CONTAINER="liteops-mysql"
 MYSQL_VERSION="8"

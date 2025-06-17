@@ -134,7 +134,7 @@ LiteOps主要适用于以下场景：
 
 ```bash
 # 拉取LiteOps镜像（如果有公开镜像仓库）
-docker pull liteops:v1
+docker pull liteops/liteops:v1
 
 # 或者从提供的镜像文件加载
 # docker load < liteops-v1.tar
