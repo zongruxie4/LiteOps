@@ -819,7 +819,7 @@ class BuildExecuteView(View):
                 history_id=generate_id(),
                 task=task,
                 build_number=build_number,
-                branch=branch if branch else '',  # 对于预发布和生产环境，分支可能为空
+                branch=branch if branch else '',  # 对于预发布和生产环境，分支为空
                 commit_id=commit_id,
                 version=version if version else None,  # 对于预发布和生产环境，使用传入的版本号
                 status='pending',  # 初始状态为等待中

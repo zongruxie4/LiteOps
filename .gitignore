@@ -40,4 +40,4 @@ dist-ssr
 *.xml
 
 # web
-/web/
+# /web/

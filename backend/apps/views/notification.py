@@ -319,7 +319,7 @@ class NotificationTestView(View):
 
             # 准备测试消息
             timestamp = str(int(time.time() * 1000))
-            test_message = "这是一条测试消息，如果您收到了这条消息，说明机器人配置正确。"
+            test_message = "这是一条测试消息，如果你收到了这条消息，说明机器人配置正确。"
 
             # 根据不同类型的机器人发送测试消息
             try:

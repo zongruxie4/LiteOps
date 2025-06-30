@@ -1,0 +1,125 @@
+/* 定义自定义PingFang字体 - 强制使用项目中的字体文件 */
+@font-face {
+  font-family: 'PingFangCustom';
+  src: url('../font/PingFang.ttc') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; 
+}
+
+@font-face {
+  font-family: 'PingFangCustom';
+  src: url('../font/PingFang.ttc') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PingFangCustom';
+  src: url('../font/PingFang.ttc') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PingFangCustom';
+  src: url('../font/PingFang.ttc') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PingFangCustom';
+  src: url('../font/PingFang.ttc') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+}
+
+body, html {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ant-typography,
+.ant-btn,
+.ant-input,
+.ant-select,
+.ant-table,
+.ant-menu,
+.ant-dropdown,
+.ant-modal,
+.ant-message,
+.ant-notification,
+.ant-form,
+.ant-card,
+.ant-tabs,
+.ant-breadcrumb,
+.ant-pagination,
+.ant-steps,
+.ant-tree,
+.ant-list,
+.ant-drawer,
+.ant-popover,
+.ant-tooltip,
+.ant-alert,
+.ant-badge,
+.ant-tag,
+.ant-progress,
+.ant-spin,
+.ant-switch,
+.ant-radio,
+.ant-checkbox,
+.ant-rate,
+.ant-slider,
+.ant-upload,
+.ant-calendar,
+.ant-date-picker,
+.ant-time-picker,
+.ant-config-provider,
+.ant-app {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+}
+
+[class*="ant-"] {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+}
+
+input, textarea, select, button {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-select-selector,
+.ant-cascader-picker,
+.ant-picker,
+.ant-mentions,
+.ant-checkbox-wrapper,
+.ant-radio-wrapper {
+  font-family: 'PingFangCustom', Arial, sans-serif !important;
+}

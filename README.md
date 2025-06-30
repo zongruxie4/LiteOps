@@ -166,7 +166,7 @@ LiteOps主要适用于以下场景：
 
 ### 前置要求
 
-在开始部署之前，请确保您的系统满足以下要求：
+在开始部署之前，请确保你的系统满足以下要求：
 
 - **操作系统**：Linux (推荐 Ubuntu 20.04+、CentOS 7+)
 - **Docker**：版本 20.0+ 
@@ -179,7 +179,7 @@ LiteOps主要适用于以下场景：
 
 #### 1. 获取部署文件
 
-您需要获取以下部署文件：
+你需要获取以下部署文件：
 
 - `start-containers.sh` - 一键部署脚本
 - `liteops_init.sql` - 数据库初始化文件
@@ -226,7 +226,7 @@ chmod +x start-containers.sh
 
 #### 5. 验证部署
 
-部署完成后，您可以通过以下方式验证：
+部署完成后，你可以通过以下方式验证：
 
 ```bash
 # 检查容器状态
@@ -257,7 +257,7 @@ docker logs liteops-mysql
 
 ### 访问应用
 
-部署成功后，您可以通过以下地址访问：
+部署成功后，你可以通过以下地址访问：
 
 - **前端界面**：http://localhost
 - **后端API**：http://localhost:8900/api/
@@ -284,7 +284,7 @@ LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但�
 
 ## 📞 联系我
 
-如果您对LiteOps有任何建议、问题或需求，欢迎通过以下方式联系我：
+如果你对LiteOps有任何建议、问题或需求，欢迎通过以下方式联系我：
 
 - **邮箱**：hukdoesn@163.com
 - **GitHub Issues**：[提交问题或建议](https://github.com/hukdoesn/liteops/issues)

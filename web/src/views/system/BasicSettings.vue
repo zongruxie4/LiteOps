@@ -1,0 +1,670 @@
+<template>
+  <div class="basic-settings">
+    <div class="page-header">
+      <h2>基本设置</h2>
+    </div>
+
+    <a-tabs v-model:activeKey="activeTabKey"  @change="handleTabChange">
+      <!-- 安全设置 -->
+      <a-tab-pane key="security-config" tab="安全设置">
+        <a-card>
+          <a-form
+            ref="securityFormRef"
+            :model="securityConfig"
+            :rules="securityRules"
+            layout="vertical"
+          >
+            <a-row :gutter="24">
+              <a-col :span="12">
+                <a-form-item label="密码最小长度" name="min_password_length">
+                  <a-input-number 
+                    v-model:value="securityConfig.min_password_length" 
+                    :min="1"
+                    :max="20"
+                    style="width: 100%"
+                    placeholder="请输入密码最小长度"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="密码复杂度要求" name="password_complexity">
+                  <a-checkbox-group v-model:value="securityConfig.password_complexity">
+                    <a-checkbox value="uppercase">包含大写字母</a-checkbox>
+                    <a-checkbox value="lowercase">包含小写字母</a-checkbox>
+                    <a-checkbox value="number">包含数字</a-checkbox>
+                    <a-checkbox value="special">包含特殊字符</a-checkbox>
+                  </a-checkbox-group>
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-row :gutter="24">
+              <a-col :span="12">
+                <a-form-item label="会话超时时间(分钟)" name="session_timeout">
+                  <a-input-number 
+                    v-model:value="securityConfig.session_timeout" 
+                    :min="1"
+                    :max="1440"
+                    style="width: 100%"
+                    placeholder="请输入会话超时时间"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="登录失败锁定次数" name="max_login_attempts">
+                  <a-input-number 
+                    v-model:value="securityConfig.max_login_attempts" 
+                    :min="1"
+                    :max="10"
+                    style="width: 100%"
+                    placeholder="请输入登录失败锁定次数"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-row :gutter="24">
+              <a-col :span="12">
+                <a-form-item label="账户锁定时间(分钟)" name="lockout_duration">
+                  <a-input-number 
+                    v-model:value="securityConfig.lockout_duration" 
+                    :min="1"
+                    :max="60"
+                    style="width: 100%"
+                    placeholder="请输入账户锁定时间"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="启用双因子认证" name="enable_2fa">
+                  <a-switch v-model:checked="securityConfig.enable_2fa" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-form-item>
+              <a-button 
+                type="primary" 
+                @click="saveSecurityConfig" 
+                :loading="securityLoading"
+                v-if="hasFunctionPermission('system_basic', 'edit')"
+              >
+                保存配置
+              </a-button>
+            </a-form-item>
+          </a-form>
+        </a-card>
+      </a-tab-pane>
+
+      <!-- 通知配置 -->
+      <a-tab-pane key="notification-config" tab="通知配置">
+        <a-card>
+          <div class="notification-header">
+            <a-button type="primary" @click="showAddRobot" v-if="hasFunctionPermission('system_basic', 'create')">
+              <template #icon><PlusOutlined /></template>
+              添加机器人
+            </a-button>
+          </div>
+
+          <a-table
+            :columns="robotColumns"
+            :data-source="robotList"
+            :loading="notificationLoading"
+            :pagination="false"
+            row-key="robot_id"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'type'">
+                {{ getRobotTypeText(record.type) }}
+              </template>
+              <template v-else-if="column.key === 'security_type'">
+                {{ getSecurityTypeText(record.security_type) }}
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-space>
+                  <a-button type="link" @click="handleEdit(record)" v-if="hasFunctionPermission('system_basic', 'edit')">
+                    编辑
+                  </a-button>
+                  <a-button type="link" @click="handleTestRobot(record)" v-if="hasFunctionPermission('system_basic', 'test')">
+                    测试
+                  </a-button>
+                  <a-popconfirm
+                    title="确定要删除这个机器人吗？"
+                    @confirm="handleDeleteRobot(record)"
+                    v-if="hasFunctionPermission('system_basic', 'delete')"
+                  >
+                    <a-button type="link" danger>删除</a-button>
+                  </a-popconfirm>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </a-tab-pane>
+    </a-tabs>
+
+    <!-- 添加/编辑机器人抽屉 -->
+    <a-drawer
+      v-model:open="drawerVisible"
+      :title="isEdit ? '编辑机器人' : '添加机器人'"
+      placement="right"
+      width="500px"
+      :closable="false"
+      :footer="null"
+      @close="handleDrawerClose"
+    >
+      <a-form
+        ref="robotFormRef"
+        :model="robotForm"
+        layout="vertical"
+      >
+        <a-form-item
+          label="机器人类型"
+          name="type"
+          :rules="[{ required: true, message: '请选择机器人类型' }]"
+        >
+          <a-select
+            v-model:value="robotForm.type"
+            placeholder="请选择机器人类型"
+            :disabled="isEdit"
+          >
+            <a-select-option value="dingtalk">钉钉机器人</a-select-option>
+            <a-select-option value="wecom">企业微信机器人</a-select-option>
+            <a-select-option value="feishu">飞书机器人</a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item
+          label="机器人名称"
+          name="name"
+          :rules="[{ required: true, message: '请输入机器人名称' }]"
+        >
+          <a-input
+            v-model:value="robotForm.name"
+            placeholder="请输入机器人名称"
+            :maxLength="50"
+          />
+        </a-form-item>
+
+        <a-form-item
+          label="Webhook地址"
+          name="webhook"
+          :rules="[{ required: true, message: '请输入Webhook地址' }]"
+        >
+          <a-input
+            v-model:value="robotForm.webhook"
+            placeholder="请输入Webhook地址"
+          />
+        </a-form-item>
+
+        <a-form-item
+          label="安全设置"
+          name="security_type"
+          :rules="[{ required: true, message: '请选择安全设置类型' }]"
+        >
+          <a-select
+            v-model:value="robotForm.security_type"
+            placeholder="请选择安全设置类型"
+          >
+            <a-select-option value="none">无</a-select-option>
+            <a-select-option value="secret">加签密钥</a-select-option>
+            <a-select-option value="keyword">自定义关键词</a-select-option>
+            <a-select-option value="ip">IP地址(段)</a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <template v-if="robotForm.security_type === 'secret'">
+          <a-form-item
+            label="加签密钥"
+            name="secret"
+            :rules="[{ required: true, message: '请输入加签密钥' }]"
+          >
+            <a-input
+              v-model:value="robotForm.secret"
+              placeholder="请输入加签密钥"
+            />
+          </a-form-item>
+        </template>
+
+        <template v-if="robotForm.security_type === 'keyword'">
+          <a-form-item
+            label="自定义关键词"
+            name="keywords"
+            :rules="[{ required: true, message: '请添加关键词' }]"
+          >
+            <a-select
+              v-model:value="robotForm.keywords"
+              mode="tags"
+              placeholder="请输入关键词后按回车添加"
+              :token-separators="[',']"
+            />
+          </a-form-item>
+        </template>
+
+        <template v-if="robotForm.security_type === 'ip'">
+          <a-form-item
+            label="IP白名单"
+            name="ip_list"
+            :rules="[{ required: true, message: '请添加IP地址' }]"
+          >
+            <a-select
+              v-model:value="robotForm.ip_list"
+              mode="tags"
+              placeholder="请输入IP地址后按回车添加"
+              :token-separators="[',']"
+            />
+            <div class="form-item-help">
+              支持IP地址或IP地址段，例如: 192.168.1.1 或 192.168.1.1/24
+            </div>
+          </a-form-item>
+        </template>
+
+        <a-form-item
+          label="备注"
+          name="remark"
+        >
+          <a-textarea
+            v-model:value="robotForm.remark"
+            placeholder="请输入备注信息"
+            :rows="4"
+            :maxLength="200"
+          />
+        </a-form-item>
+      </a-form>
+
+      <template #footer>
+        <div style="text-align: left">
+          <a-space>
+            <a-button @click="handleDrawerClose">取消</a-button>
+            <a-button type="primary" :loading="submitLoading" @click="handleSubmit">
+              确定
+            </a-button>
+          </a-space>
+        </div>
+      </template>
+    </a-drawer>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue';
+import { message } from 'ant-design-vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
+import axios from 'axios';
+import { hasFunctionPermission, checkPermission } from '../../utils/permission';
+
+const activeTabKey = ref('security-config');
+
+// 安全配置
+const securityFormRef = ref();
+const securityConfig = reactive({
+  min_password_length: 8,
+  password_complexity: ['lowercase', 'number'],
+  session_timeout: 120,
+  max_login_attempts: 5,
+  lockout_duration: 30,
+  enable_2fa: false
+});
+
+const securityRules = {
+  min_password_length: [
+    { required: true, message: '请输入密码最小长度', trigger: 'blur' }
+  ],
+  session_timeout: [
+    { required: true, message: '请输入会话超时时间', trigger: 'blur' }
+  ]
+};
+
+// 通知机器人相关
+const drawerVisible = ref(false);
+const submitLoading = ref(false);
+const notificationLoading = ref(false);
+const isEdit = ref(false);
+const robotList = ref([]);
+
+// 表格列定义
+const robotColumns = [
+  {
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type',
+    width: 120,
+  },
+  {
+    title: '机器人名称',
+    dataIndex: 'name',
+    key: 'name',
+  },
+  {
+    title: 'Webhook地址',
+    dataIndex: 'webhook',
+    key: 'webhook',
+    ellipsis: true,
+  },
+  {
+    title: '安全设置',
+    dataIndex: 'security_type',
+    key: 'security_type',
+    width: 120,
+  },
+  {
+    title: '备注',
+    dataIndex: 'remark',
+    key: 'remark',
+    ellipsis: true,
+  },
+  {
+    title: '创建时间',
+    dataIndex: 'create_time',
+    key: 'create_time',
+    width: 180,
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 200,
+    fixed: 'right',
+  },
+];
+
+// 添加/编辑机器人表单
+const robotFormRef = ref();
+const robotForm = reactive({
+  robot_id: '',
+  type: undefined,
+  name: '',
+  webhook: '',
+  security_type: 'none',
+  secret: '',
+  keywords: [],
+  ip_list: [],
+  remark: '',
+});
+
+// 加载状态
+const securityLoading = ref(false);
+
+// 标签页切换
+const handleTabChange = (key) => {
+  if (key === 'notification-config') {
+    loadRobotList();
+  }
+};
+
+// 获取安全配置
+const fetchSecurityConfig = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/system/security/', {
+      headers: {
+        'Authorization': token
+      }
+    });
+
+    if (response.data.code === 200) {
+      Object.assign(securityConfig, response.data.data);
+    }
+  } catch (error) {
+    console.error('获取安全配置失败:', error);
+  }
+};
+
+// 保存安全配置
+const saveSecurityConfig = async () => {
+  try {
+    await securityFormRef.value.validate();
+    securityLoading.value = true;
+
+    const token = localStorage.getItem('token');
+    const response = await axios.put('/api/system/security/', securityConfig, {
+      headers: {
+        'Authorization': token
+      }
+    });
+
+    if (response.data.code === 200) {
+      message.success('安全配置保存成功');
+    } else {
+      message.error(response.data.message || '保存失败');
+    }
+  } catch (error) {
+    console.error('保存安全配置失败:', error);
+    message.error('保存失败');
+  } finally {
+    securityLoading.value = false;
+  }
+};
+
+// 获取机器人列表
+const loadRobotList = async () => {
+  if (!checkPermission('system_basic', 'view')) {
+    return;
+  }
+  try {
+    notificationLoading.value = true;
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/notification/robots/', {
+      headers: { 'Authorization': token }
+    });
+    
+    if (response.data.code === 200) {
+      robotList.value = response.data.data;
+    } else {
+      message.error(response.data.message || '获取机器人列表失败');
+    }
+  } catch (error) {
+    console.error('Load robot list error:', error);
+    message.error('获取机器人列表失败');
+  } finally {
+    notificationLoading.value = false;
+  }
+};
+
+// 获取机器人类型文本
+const getRobotTypeText = (type) => {
+  const types = {
+    dingtalk: '钉钉',
+    wecom: '企业微信',
+    feishu: '飞书',
+  };
+  return types[type] || type;
+};
+
+// 获取安全设置类型文本
+const getSecurityTypeText = (type) => {
+  const types = {
+    none: '无',
+    secret: '加签密钥',
+    keyword: '关键词',
+    ip: 'IP白名单',
+  };
+  return types[type] || type;
+};
+
+// 显示添加机器人抽屉
+const showAddRobot = () => {
+  if (!checkPermission('system_basic', 'create')) {
+    return;
+  }
+  isEdit.value = false;
+  drawerVisible.value = true;
+};
+
+// 显示编辑机器人抽屉
+const handleEdit = (record) => {
+  if (!checkPermission('system_basic', 'edit')) {
+    return;
+  }
+  isEdit.value = true;
+  Object.assign(robotForm, {
+    robot_id: record.robot_id,
+    type: record.type,
+    name: record.name,
+    webhook: record.webhook,
+    security_type: record.security_type,
+    secret: record.secret,
+    keywords: record.keywords || [],
+    ip_list: record.ip_list || [],
+    remark: record.remark,
+  });
+  drawerVisible.value = true;
+};
+
+const handleDrawerClose = () => {
+  drawerVisible.value = false;
+  robotFormRef.value?.resetFields();
+  Object.assign(robotForm, {
+    robot_id: '',
+    type: undefined,
+    name: '',
+    webhook: '',
+    security_type: 'none',
+    secret: '',
+    keywords: [],
+    ip_list: [],
+    remark: '',
+  });
+};
+
+// 提交表单
+const handleSubmit = async () => {
+  try {
+    await robotFormRef.value.validate();
+    submitLoading.value = true;
+    
+    const token = localStorage.getItem('token');
+    const method = isEdit.value ? 'put' : 'post';
+    const response = await axios[method]('/api/notification/robots/', robotForm, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      message.success(isEdit.value ? '更新机器人成功' : '添加机器人成功');
+      handleDrawerClose();
+      loadRobotList();
+    } else {
+      message.error(response.data.message || (isEdit.value ? '更新机器人失败' : '添加机器人失败'));
+    }
+  } catch (error) {
+    console.error(isEdit.value ? 'Update robot error:' : 'Add robot error:', error);
+    message.error(isEdit.value ? '更新机器人失败' : '添加机器人失败');
+  } finally {
+    submitLoading.value = false;
+  }
+};
+
+// 测试机器人
+const handleTestRobot = async (robot) => {
+  if (!checkPermission('system_basic', 'test')) {
+    return;
+  }
+  try {
+    const token = localStorage.getItem('token');
+    const hide = message.loading('正在发送测试消息...', 0);
+    
+    const response = await axios.post('/api/notification/robots/test/', {
+      robot_id: robot.robot_id
+    }, {
+      headers: { 'Authorization': token }
+    });
+
+    hide();
+    
+    if (response.data.code === 200) {
+      message.success('测试消息发送成功');
+    } else {
+      message.error(response.data.message || '发送测试消息失败');
+    }
+  } catch (error) {
+    console.error('Test robot error:', error);
+    message.error('发送测试消息失败');
+  }
+};
+
+// 删除机器人
+const handleDeleteRobot = async (robot) => {
+  if (!checkPermission('system_basic', 'delete')) {
+    return;
+  }
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.delete('/api/notification/robots/', {
+      headers: { 'Authorization': token },
+      data: { robot_id: robot.robot_id }
+    });
+
+    if (response.data.code === 200) {
+      message.success('删除成功');
+      loadRobotList();
+    } else {
+      message.error(response.data.message || '删除失败');
+    }
+  } catch (error) {
+    console.error('Delete robot error:', error);
+    message.error('删除失败');
+  }
+};
+
+onMounted(() => {
+  fetchSecurityConfig();
+});
+</script>
+
+<style scoped>
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 500;
+}
+
+:deep(.ant-card) {
+  border-radius: 4px;
+}
+
+:deep(.ant-tabs-content-holder) {
+  padding: 0;
+}
+
+:deep(.ant-form-item-explain-error) {
+  font-size: 12px;
+}
+
+:deep(.ant-checkbox-group) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-header {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+:deep(.ant-drawer-header) {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+:deep(.ant-drawer-body) {
+  padding: 24px;
+}
+
+:deep(.ant-drawer-footer) {
+  border-top: 1px solid #f0f0f0;
+  padding: 10px 16px;
+}
+
+:deep(.ant-table-thead > tr > th) {
+  background: #fafafa;
+}
+
+.form-item-help {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 4px;
+}
+</style> 
