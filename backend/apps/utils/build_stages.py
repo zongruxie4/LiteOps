@@ -121,7 +121,7 @@ class BuildStageExecutor:
             with tempfile.NamedTemporaryFile(
                 mode='w', 
                 suffix='.sh', 
-                prefix=f'build_stage_{stage_name}_',
+                prefix=f'.build_stage_{stage_name}_',
                 dir=self.build_path,
                 delete=False
             ) as temp_file:
@@ -136,36 +136,14 @@ class BuildStageExecutor:
                 temp_file.write(f'source "{self.vars_file}" 2>/dev/null || true\n')
                 temp_file.write('\n')
                 
-                # 添加命令显示函数
-                temp_file.write('''# 命令显示函数
-execute_with_display() {
-    echo "+ $*"
-    "$@"
-}
-
-''')
+                # 启用命令显示（bash调试模式）
+                temp_file.write('set -x  # 显示执行的命令\n')
+                temp_file.write('\n')
                 
                 temp_file.write('# 用户脚本开始\n')
                 
-                # 逐行处理脚本内容
-                for line in script_content.splitlines():
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        # 检查是否是变量赋值语句（如：VAR=value 或 export VAR=value）
-                        if self._is_variable_assignment(line):
-                            # 变量赋值：直接显示并执行
-                            temp_file.write(f'echo "+ {line}"\n')
-                            temp_file.write(f'{line}\n')
-                        elif any(op in line for op in ['|', '>', '<', '&&', '||', ';']):
-                            # 复杂命令：先显示，再在子shell中执行
-                            temp_file.write(f'echo "+ {line}"\n')
-                            temp_file.write(f'bash -c {repr(line)}\n')
-                        else:
-                            # 简单命令：使用函数显示并执行
-                            temp_file.write(f'execute_with_display {line}\n')
-                    elif line.startswith('#'):
-                        # 保留注释
-                        temp_file.write(f'{line}\n')
+                # 直接写入用户脚本内容，保持完整性
+                temp_file.write(script_content)
                 
                 temp_file.write('\n')
                 
@@ -241,8 +219,10 @@ execute_with_display() {
             self.send_log(f"执行脚本时发生错误: {str(e)}", stage_name)
             return False
         finally:
-            if script_path.startswith(tempfile.gettempdir()) or '/build_stage_' in script_path:
+            if script_path.startswith(tempfile.gettempdir()) or '/.build_stage_' in script_path:
                 try:
+                    # 清理临时脚本文件
+                    # pass
                     os.unlink(script_path)
                 except Exception as e:
                     logger.debug(f"清理临时脚本文件失败: {str(e)}")
