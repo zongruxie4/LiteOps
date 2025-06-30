@@ -462,11 +462,19 @@ class Builder:
                 'LANG': 'POSIX',
             }
 
-            combined_env = {**os.environ, **system_variables}
+            # 添加自定义参数变量
+            custom_parameters = {}
+            if self.history.parameter_values:
+                for param_name, selected_values in self.history.parameter_values.items():
+                    custom_parameters[param_name] = ','.join(selected_values)
+                    self.send_log(f"设置参数变量: {param_name}={custom_parameters[param_name]}", "Parameters")
+
+            combined_env = {**os.environ, **system_variables, **custom_parameters}
             stage_executor.env = combined_env
 
-            # 保存系统变量到文件
-            stage_executor._save_variables_to_file(system_variables)
+            # 保存系统变量和自定义参数到文件
+            all_variables = {**system_variables, **custom_parameters}
+            stage_executor._save_variables_to_file(all_variables)
 
             # 执行构建阶段
             success = self.execute_stages(stage_executor)

@@ -134,6 +134,84 @@
           </div>
         </div>
 
+        <!-- 构建参数配置 -->
+        <a-divider>构建参数</a-divider>
+        <div class="parameters-list">
+          <div v-for="(param, index) in formState.parameters" :key="index" class="parameter-item">
+            <div class="parameter-header">
+              <span class="parameter-number">
+                <TagOutlined /> 参数 {{ index + 1 }}
+              </span>
+              <a-space>
+                <a-tooltip title="删除">
+                  <a-button
+                    v-if="formState.parameters.length > 0"
+                    type="text"
+                    danger
+                    @click="removeParameter(index)"
+                  >
+                    <DeleteOutlined />
+                  </a-button>
+                </a-tooltip>
+              </a-space>
+            </div>
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item
+                  label="参数名称"
+                  :name="['parameters', index, 'name']"
+                  :rules="[
+                    { required: true, message: '请输入参数名称' },
+                    { pattern: /^[A-Z_][A-Z0-9_]*$/, message: '参数名只能包含大写字母、数字和下划线，且必须以字母或下划线开头' }
+                  ]"
+                >
+                  <a-input v-model:value="param.name" placeholder="例如：MY_SERVICES">
+                    <template #prefix>
+                      <KeyOutlined />
+                    </template>
+                  </a-input>
+                  <div class="form-item-help">参数名只能包含大写字母、数字和下划线</div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="参数描述">
+                  <a-input v-model:value="param.description" placeholder="参数用途说明" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="默认值">
+                  <a-input v-model:value="param.defaultValuesText" placeholder="多个值用逗号分隔" @blur="updateDefaultValues(param, index)" />
+                  <div class="form-item-help">多个默认值用英文逗号分隔</div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="24">
+                <a-form-item
+                  label="可选值"
+                  :name="['parameters', index, 'choicesText']"
+                  :rules="[{ required: true, message: '请输入可选值' }]"
+                >
+                  <a-textarea 
+                    v-model:value="param.choicesText"
+                    placeholder="每行一个选项值，例如：&#10;user-service&#10;payment-service"
+                    :rows="3"
+                    @blur="updateChoices(param, index)"
+                  />
+                  <div class="form-item-help">每行输入一个选项值</div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </div>
+        </div>
+
+        <div class="parameter-actions">
+          <a-button type="dashed" block @click="addParameter">
+            <PlusOutlined /> 添加构建参数
+          </a-button>
+        </div>
+
+        <a-divider>构建阶段</a-divider>
         <div class="stages-list">
           <div v-for="(stage, index) in formState.stages" :key="index" class="stage-item">
             <div class="stage-header">
@@ -404,6 +482,7 @@ const formState = reactive({
       script: '',
     }
   ],
+  parameters: [],
   notification_channels: [],
 });
 
@@ -509,6 +588,51 @@ const removeStage = (index) => {
   formState.stages.splice(index, 1);
 };
 
+// 添加构建参数
+const addParameter = () => {
+  formState.parameters.push({
+    name: '',
+    description: '',
+    choices: [],
+    choicesText: '',
+    choiceOptions: [],
+    default_values: [],
+    defaultValuesText: '',
+  });
+};
+
+const removeParameter = (index) => {
+  formState.parameters.splice(index, 1);
+};
+
+// 更新选项
+const updateChoices = (param, index) => {
+  if (param.choicesText) {
+    const choices = param.choicesText.split('\n').filter(line => line.trim()).map(line => line.trim());
+    param.choices = choices;
+    param.choiceOptions = choices.map(choice => ({
+      label: choice,
+      value: choice
+    }));
+    
+    param.default_values = param.default_values.filter(value => choices.includes(value));
+  } else {
+    param.choices = [];
+    param.choiceOptions = [];
+    param.default_values = [];
+  }
+};
+
+// 更新默认值
+const updateDefaultValues = (param, index) => {
+  if (param.defaultValuesText) {
+    const values = param.defaultValuesText.split(',').filter(val => val.trim()).map(val => val.trim());
+    param.default_values = values;
+  } else {
+    param.default_values = [];
+  }
+};
+
 // 处理返回
 const handleBack = () => {
   router.back();
@@ -525,6 +649,14 @@ const handleSubmit = async () => {
     
     // 构建提交数据
     const submitData = { ...formState };
+    
+    // 处理参数数据
+    submitData.parameters = formState.parameters.map(param => ({
+      name: param.name,
+      description: param.description,
+      choices: param.choices,
+      default_values: param.default_values
+    }));
     
     if (!submitData.use_external_script) {
       submitData.external_script_repo_url = '';
@@ -589,6 +721,25 @@ const loadTaskDetail = async (taskId) => {
           script: '',
         });
       }
+
+      // 加载参数配置
+      const parameters = response.data.data.parameters || [];
+      formState.parameters = parameters.map(param => {
+        const choicesText = (param.choices || []).join('\n');
+        const defaultValuesText = (param.default_values || []).join(',');
+        return {
+          name: param.name || '',
+          description: param.description || '',
+          choices: param.choices || [],
+          choicesText: choicesText,
+          choiceOptions: (param.choices || []).map(choice => ({
+            label: choice,
+            value: choice
+          })),
+          default_values: param.default_values || [],
+          defaultValuesText: defaultValuesText,
+        };
+      });
       
       formState.notification_channels = response.data.data.notification_channels || [];
       
@@ -787,6 +938,38 @@ onMounted(async () => {
 }
 
 .stage-actions {
+  margin-top: 16px;
+}
+
+.parameters-list {
+  margin-top: 16px;
+}
+
+.parameter-item {
+  padding: 16px;
+  background: transparent;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.parameter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.parameter-number {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.parameter-actions {
   margin-top: 16px;
 }
 

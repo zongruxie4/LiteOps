@@ -225,6 +225,18 @@ class BuildTask(models.Model):
     # 构建阶段
     stages = models.JSONField(default=list, verbose_name='构建阶段')
 
+    # 构建参数配置
+    parameters = models.JSONField(default=list, verbose_name='构建参数配置', help_text='''
+    [
+        {
+            "name": "MY_SERVICES",
+            "description": "选择要部署的服务",
+            "choices": ["user-service", "order-service", "payment-service"],
+            "default_values": ["user-service"]
+        }
+    ]
+    ''')
+
     # 外部脚本库配置
     use_external_script = models.BooleanField(default=False, verbose_name='使用外部脚本库')
     external_script_config = models.JSONField(default=dict, verbose_name='外部脚本库配置', help_text='''
@@ -287,6 +299,12 @@ class BuildHistory(models.Model):
     requirement = models.TextField(null=True, blank=True, verbose_name='构建需求描述')
     build_log = models.TextField(null=True, blank=True, verbose_name='构建日志')
     stages = models.JSONField(default=list, verbose_name='构建阶段')
+    parameter_values = models.JSONField(default=dict, verbose_name='构建参数值', help_text='''
+    {
+        "MY_SERVICES": ["user-service", "order-service"],
+        "FEATURE_FLAGS": ["enable-cache"]
+    }
+    ''')
     build_time = models.JSONField(default=dict, verbose_name='构建时间信息', help_text='''
     {
         "total_duration": "300",  # 总耗时（秒）

@@ -145,6 +145,7 @@ class BuildTaskView(View):
                                 'name': task.git_token.name
                             } if task.git_token else None,
                             'stages': task.stages,
+                            'parameters': task.parameters,
                             'notification_channels': task.notification_channels,
                             'notification_robots': notification_robots,
                             # 外部脚本库配置
@@ -288,7 +289,8 @@ class BuildTaskView(View):
                     'description': task.description,
                     'branch': task.branch,
                     'status': task.status,
-                    'building_status': task.building_status,  # 添加构建状态字段
+                    'building_status': task.building_status, 
+                    'parameters': task.parameters,
                     'version': task.version,
                     'last_build_number': task.last_build_number,
                     'total_builds': task.total_builds,
@@ -334,6 +336,7 @@ class BuildTaskView(View):
                 branch = data.get('branch', 'main')
                 git_token_id = data.get('git_token_id')
                 stages = data.get('stages', [])
+                parameters = data.get('parameters', [])
                 notification_channels = data.get('notification_channels', [])
 
                 # 外部脚本库配置
@@ -378,6 +381,23 @@ class BuildTaskView(View):
                         'code': 400,
                         'message': '任务名称、项目和环境不能为空'
                     })
+
+                # 验证参数配置格式
+                if parameters:
+                    import re
+                    for param in parameters:
+                        if not param.get('name') or not param.get('choices'):
+                            return JsonResponse({
+                                'code': 400,
+                                'message': '参数名称和可选值不能为空'
+                            })
+                        
+                        # 验证参数名格式（大写字母、数字、下划线）
+                        if not re.match(r'^[A-Z_][A-Z0-9_]*$', param['name']):
+                            return JsonResponse({
+                                'code': 400,
+                                'message': f'参数名"{param["name"]}"格式不正确，只能包含大写字母、数字和下划线，且必须以字母或下划线开头'
+                            })
 
                 # 验证通知机器人是否存在
                 if notification_channels:
@@ -431,6 +451,7 @@ class BuildTaskView(View):
                     branch=branch,
                     git_token=git_token,
                     stages=stages,
+                    parameters=parameters,
                     notification_channels=notification_channels,
                     use_external_script=use_external_script,
                     external_script_config=external_script_config,
@@ -473,6 +494,7 @@ class BuildTaskView(View):
                 branch = data.get('branch')
                 git_token_id = data.get('git_token_id')
                 stages = data.get('stages')
+                parameters = data.get('parameters')
                 notification_channels = data.get('notification_channels')
                 status = data.get('status')
 
@@ -511,6 +533,23 @@ class BuildTaskView(View):
                         }
                     else:
                         external_script_config = {}
+
+                # 验证参数配置格式
+                if parameters:
+                    import re
+                    for param in parameters:
+                        if not param.get('name') or not param.get('choices'):
+                            return JsonResponse({
+                                'code': 400,
+                                'message': '参数名称和可选值不能为空'
+                            })
+                        
+                        # 验证参数名格式（大写字母、数字、下划线）
+                        if not re.match(r'^[A-Z_][A-Z0-9_]*$', param['name']):
+                            return JsonResponse({
+                                'code': 400,
+                                'message': f'参数名"{param["name"]}"格式不正确，只能包含大写字母、数字和下划线，且必须以字母或下划线开头'
+                            })
 
                 if not task_id:
                     return JsonResponse({
@@ -617,6 +656,8 @@ class BuildTaskView(View):
                     task.branch = branch
                 if 'stages' in data:
                     task.stages = stages
+                if 'parameters' in data:
+                    task.parameters = parameters
                 if 'notification_channels' in data:
                     # 验证通知机器人是否存在
                     existing_robots = set(NotificationRobot.objects.filter(
@@ -710,6 +751,7 @@ class BuildExecuteView(View):
             commit_id = data.get('commit_id')
             version = data.get('version') 
             requirement = data.get('requirement')
+            parameter_values = data.get('parameter_values', {})
 
             if not task_id:
                 return JsonResponse({
@@ -785,6 +827,23 @@ class BuildExecuteView(View):
                     'message': '构建需求描述不能为空'
                 })
 
+            # 验证参数值是否合法
+            if task.parameters and parameter_values:
+                task_parameters = {p['name']: p['choices'] for p in task.parameters}
+                for param_name, selected_values in parameter_values.items():
+                    if param_name not in task_parameters:
+                        return JsonResponse({
+                            'code': 400,
+                            'message': f'未定义的参数: {param_name}'
+                        })
+                    
+                    for value in selected_values:
+                        if value not in task_parameters[param_name]:
+                            return JsonResponse({
+                                'code': 400,
+                                'message': f'参数{param_name}的值"{value}"不在可选范围内'
+                            })
+
             # 检查任务的构建状态
             if task.building_status == 'building':
                 return JsonResponse({
@@ -824,6 +883,7 @@ class BuildExecuteView(View):
                 version=version if version else None,  # 对于预发布和生产环境，使用传入的版本号
                 status='pending',  # 初始状态为等待中
                 requirement=requirement,
+                parameter_values=parameter_values,
                 operator=User.objects.get(user_id=request.user_id)  # 记录构建人
             )
 

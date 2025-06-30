@@ -362,6 +362,21 @@
           </div>
         </a-form-item>
 
+        <!-- 构建参数选择 -->
+        <div v-if="selectedTask?.parameters?.length > 0" class="build-parameters">
+          <a-divider>构建参数</a-divider>
+          
+          <div v-for="param in selectedTask.parameters" :key="param.name" class="parameter-group">
+            <a-form-item :label="param.name">
+              <a-checkbox-group 
+                v-model:value="buildForm.parameterValues[param.name]" 
+                :options="param.choiceOptions"
+              />
+              <div class="parameter-help" v-if="param.description">{{ param.description }}</div>
+            </a-form-item>
+          </div>
+        </div>
+
         <a-form-item label="构建需求描述" required>
           <a-textarea
             v-model:value="buildForm.requirement"
@@ -429,6 +444,7 @@ const buildForm = reactive({
   commit_id: '',
   requirement: '',
   version: '',
+  parameterValues: {},
 });
 
 // SSE相关状态
@@ -706,6 +722,21 @@ const handleBuild = async (record) => {
   buildForm.commit_id = '';
   buildForm.requirement = '';
   buildForm.version = '';
+  buildForm.parameterValues = {};
+
+  // 初始化参数默认值
+  if (record.parameters && record.parameters.length > 0) {
+    record.parameters.forEach(param => {
+      // 处理参数选项
+      param.choiceOptions = (param.choices || []).map(choice => ({
+        label: choice,
+        value: choice
+      }));
+      
+      // 设置默认值
+      buildForm.parameterValues[param.name] = [...(param.default_values || [])];
+    });
+  }
 
   // 显示构建对话框
   buildModalVisible.value = true;
@@ -1213,7 +1244,8 @@ const confirmBuild = async () => {
     // 构建请求参数
     const requestData = {
       task_id: selectedTask.value.task_id,
-      requirement: buildForm.requirement
+      requirement: buildForm.requirement,
+      parameter_values: buildForm.parameterValues
     };
 
     if (isDevOrTestEnv.value) {
@@ -1326,14 +1358,6 @@ const isStagingOrProdEnv = computed(() => {
 
 // 构建对话框标题
 const buildModalTitle = computed(() => {
-  if (!selectedTask.value) return '构建配置';
-
-  const envType = selectedTask.value.environment?.type;
-  if (envType === 'development') return '开发环境构建配置';
-  if (envType === 'testing') return '测试环境构建配置';
-  if (envType === 'staging') return '预发布环境构建配置';
-  if (envType === 'production') return '生产环境构建配置';
-
   return '构建配置';
 });
 
@@ -1697,5 +1721,19 @@ const handleViewBuildDetail = (record) => {
 .stat-icon {
   font-size: 12px;
   color: #999;
+}
+
+.build-parameters {
+  margin: 16px 0;
+}
+
+.parameter-group {
+  margin-bottom: 16px;
+}
+
+.parameter-help {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 4px;
 }
 </style>
