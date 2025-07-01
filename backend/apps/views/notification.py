@@ -320,6 +320,12 @@ class NotificationTestView(View):
             # 准备测试消息
             timestamp = str(int(time.time() * 1000))
             test_message = "这是一条测试消息，如果你收到了这条消息，说明机器人配置正确。"
+            
+            # 使用自定义关键词安全设置，需要在消息中包含关键词
+            if robot.security_type == 'keyword' and robot.keywords:
+                # 测试消息中关键词
+                keyword = robot.keywords[0]
+                test_message = f"【{keyword}】{test_message}"
 
             # 根据不同类型的机器人发送测试消息
             try:
