@@ -328,7 +328,7 @@ const robotColumns = [
     title: '类型',
     dataIndex: 'type',
     key: 'type',
-    width: 120,
+    // width: 120,
   },
   {
     title: '机器人名称',
@@ -345,7 +345,7 @@ const robotColumns = [
     title: '安全设置',
     dataIndex: 'security_type',
     key: 'security_type',
-    width: 120,
+    // width: 120,
   },
   {
     title: '备注',
@@ -357,12 +357,12 @@ const robotColumns = [
     title: '创建时间',
     dataIndex: 'create_time',
     key: 'create_time',
-    width: 180,
+    // width: 180,
   },
   {
     title: '操作',
     key: 'action',
-    width: 200,
+    // width: 200,
     fixed: 'right',
   },
 ];

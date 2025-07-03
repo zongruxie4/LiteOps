@@ -107,6 +107,39 @@ class BuildStageExecutor:
             logger.error(f"检查变量赋值语句失败: {str(e)}", exc_info=True)
             return False
 
+    def _process_echo_commands(self, script_content: str) -> str:
+        """
+        处理脚本内容中的echo命令，使其不显示执行过程
+        """
+        try:
+            import re
+            lines = script_content.split('\n')
+            processed_lines = []
+            
+            for line in lines:
+                # 保留原始缩进
+                leading_whitespace = len(line) - len(line.lstrip())
+                stripped_line = line.strip()
+                indent = line[:leading_whitespace]
+                
+                # 使用正则表达式匹配echo命令
+                # 匹配echo格式：echo、echo -n、echo -e
+                echo_pattern = r'^echo(\s+-[a-zA-Z]*)?(\s+.*)?\s*$'
+                
+                if stripped_line and re.match(echo_pattern, stripped_line):
+                    wrapped_line = f"{indent}{{ set +x; }} 2>/dev/null; {stripped_line}; {{ set -x; }} 2>/dev/null"
+                    processed_lines.append(wrapped_line)
+                else:
+                    # 不是echo命令，保持原样
+                    processed_lines.append(line)
+            
+            return '\n'.join(processed_lines)
+            
+        except Exception as e:
+            logger.error(f"处理echo命令失败: {str(e)}", exc_info=True)
+            # 如果处理失败，返回原始内容
+            return script_content
+
     def _create_temp_script_file(self, script_content: str, stage_name: str) -> str:
         """
         创建临时脚本文件，支持Jenkins风格的命令显示
@@ -142,8 +175,9 @@ class BuildStageExecutor:
                 
                 temp_file.write('# 用户脚本开始\n')
                 
-                # 直接写入用户脚本内容，保持完整性
-                temp_file.write(script_content)
+                # 处理脚本内容，将echo命令包装为不显示执行过程的形式
+                processed_content = self._process_echo_commands(script_content)
+                temp_file.write(processed_content)
                 
                 temp_file.write('\n')
                 

@@ -377,7 +377,8 @@ class Builder:
                     'duration': str(int(time.time() - clone_start_time))
                 })
             else:
-                self.send_log(f"预发布/生产环境构建，跳过代码克隆，直接使用版本: {self.version}", "Environment")
+                pass
+                # self.send_log(f"预发布/生产环境构建，跳过代码克隆，直接使用版本: {self.version}", "Environment")
 
                 # 创建构建目录
                 os.makedirs(self.build_path, exist_ok=True)

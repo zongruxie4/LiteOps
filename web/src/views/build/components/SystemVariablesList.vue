@@ -64,7 +64,7 @@ const columns = [
     title: '变量名',
     dataIndex: 'name',
     key: 'name',
-    width: 200,
+    // width: 200,
   },
   {
     title: '说明',
