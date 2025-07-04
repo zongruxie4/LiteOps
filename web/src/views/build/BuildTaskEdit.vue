@@ -2,7 +2,7 @@
   <div class="build-task-edit">
     <div class="page-header">
       <a-page-header
-        :title="isEdit ? '编辑构建任务' : '新建构建任务'"
+        :title="isEdit ? '编辑构建任务' : (isCopy ? '复制构建任务' : '新建构建任务')"
         @back="handleBack"
       />
     </div>
@@ -427,6 +427,7 @@ const router = useRouter();
 const route = useRoute();
 const formRef = ref();
 const isEdit = ref(false);
+const isCopy = ref(false);
 const submitLoading = ref(false);
 const loading = ref(false);
 const projectOptions = ref([]);
@@ -665,7 +666,7 @@ const handleSubmit = async () => {
       submitData.external_script_token_id = undefined;
     }
     
-    if (!isEdit.value) {
+    if (!isEdit.value || isCopy.value) {
       delete submitData.task_id;
     }
     
@@ -674,14 +675,26 @@ const handleSubmit = async () => {
     });
 
     if (response.data.code === 200) {
-      message.success(`${isEdit.value ? '更新' : '创建'}构建任务成功`);
+      let successMsg = '创建构建任务成功';
+      if (isEdit.value) {
+        successMsg = '更新构建任务成功';
+      } else if (isCopy.value) {
+        successMsg = '复制构建任务成功';
+      }
+      message.success(successMsg);
       router.push('/build/tasks');
     } else {
       throw new Error(response.data.message);
     }
   } catch (error) {
     console.error('Submit task error:', error);
-    message.error(error.message || `${isEdit.value ? '更新' : '创建'}构建任务失败`);
+    let errorMsg = '创建构建任务失败';
+    if (isEdit.value) {
+      errorMsg = '更新构建任务失败';
+    } else if (isCopy.value) {
+      errorMsg = '复制构建任务失败';
+    }
+    message.error(error.message || errorMsg);
   } finally {
     submitLoading.value = false;
   }
@@ -699,6 +712,90 @@ const loadTaskDetail = async (taskId) => {
     if (response.data.code === 200) {
       formState.task_id = response.data.data.task_id;
       formState.name = response.data.data.name;
+      formState.description = response.data.data.description;
+      formState.branch = response.data.data.branch;
+      
+      // 外部脚本库配置
+      formState.use_external_script = response.data.data.use_external_script || false;
+      formState.external_script_repo_url = response.data.data.external_script_repo_url || '';
+      formState.external_script_directory = response.data.data.external_script_directory || '';
+      formState.external_script_branch = response.data.data.external_script_branch || '';
+      formState.external_script_token_id = response.data.data.external_script_token_id || undefined;
+      
+      const stages = response.data.data.stages || [];
+      formState.stages = stages.map(stage => ({
+        name: stage.name || '',
+        script: stage.script || '',
+      }));
+      
+      if (formState.stages.length === 0) {
+        formState.stages.push({
+          name: '构建',
+          script: '',
+        });
+      }
+
+      // 加载参数配置
+      const parameters = response.data.data.parameters || [];
+      formState.parameters = parameters.map(param => {
+        const choicesText = (param.choices || []).join('\n');
+        const defaultValuesText = (param.default_values || []).join(',');
+        return {
+          name: param.name || '',
+          description: param.description || '',
+          choices: param.choices || [],
+          choicesText: choicesText,
+          choiceOptions: (param.choices || []).map(choice => ({
+            label: choice,
+            value: choice
+          })),
+          default_values: param.default_values || [],
+          defaultValuesText: defaultValuesText,
+        };
+      });
+      
+      formState.notification_channels = response.data.data.notification_channels || [];
+      
+      if (response.data.data.project) {
+        formState.project_id = response.data.data.project.project_id;
+      }
+      if (response.data.data.environment) {
+        formState.environment_id = response.data.data.environment.environment_id;
+      }
+      if (response.data.data.git_token) {
+        formState.git_token_id = response.data.data.git_token.credential_id;
+      }
+
+      // 加载相关选项数据
+      await Promise.all([
+        loadProjects(),
+        loadEnvironments(),
+        loadGitCredentials()
+      ]);
+    } else {
+      message.error(response.data.message || '加载任务详情失败');
+    }
+  } catch (error) {
+    console.error('加载任务详情失败:', error);
+    message.error('加载任务详情失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 复制任务加载任务详情
+const loadTaskDetailForCopy = async (sourceTaskId) => {
+  try {
+    loading.value = true;
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`/api/build/tasks/${sourceTaskId}`, {
+      headers: { 'Authorization': token }
+    });
+    
+    if (response.data.code === 200) {
+      // 新任务不设置task_id
+      formState.task_id = '';
+      formState.name = response.data.data.name + ' - Copy';
       formState.description = response.data.data.description;
       formState.branch = response.data.data.branch;
       
@@ -861,9 +958,14 @@ const truncateUrl = (url) => {
 
 onMounted(async () => {
   const taskId = route.query.task_id;
+  const sourceTaskId = route.query.source_task_id;
+  
   if (taskId) {
     isEdit.value = true;
     await loadTaskDetail(taskId);
+  } else if (sourceTaskId) {
+    isCopy.value = true;
+    await loadTaskDetailForCopy(sourceTaskId);
   } else {
     loadProjects();
     loadEnvironments();

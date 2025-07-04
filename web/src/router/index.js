@@ -90,6 +90,12 @@ const routes = [
             meta: { title: '编辑构建任务', permission: '/build/tasks' }
           },
           {
+            path: 'tasks/copy',
+            name: 'build-task-copy',
+            component: () => import('../views/build/BuildTaskEdit.vue'),
+            meta: { title: '复制构建任务', permission: '/build/tasks' }
+          },
+          {
             path: 'history',
             name: 'build-history',
             component: () => import('../views/build/BuildHistory.vue'),

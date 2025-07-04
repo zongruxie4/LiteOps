@@ -194,6 +194,9 @@
                     <a-menu-item key="edit" @click="handleEdit(record)">
                       编辑
                     </a-menu-item>
+                    <a-menu-item key="copy" @click="handleCopy(record)">
+                      复制
+                    </a-menu-item>
                     <a-menu-divider />
                     <a-menu-item
                       key="enable-disable"
@@ -409,7 +412,8 @@ import {
   CloseCircleOutlined,
   StopOutlined,
   FieldTimeOutlined,
-  LoadingOutlined
+  LoadingOutlined,
+  CopyOutlined
 } from '@ant-design/icons-vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -1306,6 +1310,23 @@ const handleEdit = (record) => {
   });
 };
 
+// 处理复制任务
+const handleCopy = (record) => {
+  // 检查权限
+  const module = 'build_task';
+  const action = 'create';
+  if (!hasFunctionPermission(module, action)) {
+    message.error('你没有创建构建任务的权限');
+    return;
+  }
+
+  stopLogUpdate(); // 确保在跳转前清理定时器
+  router.push({
+    name: 'build-task-copy',
+    query: { source_task_id: record.task_id }
+  });
+};
+
 // 下载日志
 const handleDownloadLog = async () => {
   if (!selectedHistoryId.value) {
@@ -1410,6 +1431,8 @@ const handleViewBuildDetail = (record) => {
     }
   });
 };
+
+
 </script>
 
 <style scoped>

@@ -382,6 +382,13 @@ class BuildTaskView(View):
                         'message': '任务名称、项目和环境不能为空'
                     })
 
+                # 检查任务名称是否已存在
+                if BuildTask.objects.filter(name=name).exists():
+                    return JsonResponse({
+                        'code': 400,
+                        'message': f'任务名称 "{name}" 已存在，请使用其他名称'
+                    })
+
                 # 验证参数配置格式
                 if parameters:
                     import re
@@ -649,6 +656,12 @@ class BuildTaskView(View):
 
                 # 更新其他字段
                 if 'name' in data:
+                    # 检查任务名称是否已存在
+                    if BuildTask.objects.filter(name=name).exclude(task_id=task_id).exists():
+                        return JsonResponse({
+                            'code': 400,
+                            'message': f'任务名称 "{name}" 已存在，请使用其他名称'
+                        })
                     task.name = name
                 if 'description' in data:
                     task.description = description
