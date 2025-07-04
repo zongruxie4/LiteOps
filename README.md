@@ -15,7 +15,9 @@
   <img src="https://img.shields.io/badge/Docker-Ready-2496ed?style=flat-square&logo=docker" alt="Docker"/>
 </p>
 
+
 # 项目介绍
+**注意根据GitHub源码内容为最新版本，官网和DockerHub更新稍慢**
 
 ## LiteOps CICD 平台概述
 
@@ -35,65 +37,44 @@ LiteOps的核心特点是"实用、贴合需求、易于使用"：
   <tr>
     <td align="center" width="50%">
       <img src="image/dashboard.png" alt="仪表板" width="90%"/>
-      <p><strong>系统仪表板</strong><br/>整体概览，快速查看系统状态</p>
     </td>
     <td align="center" width="50%">
       <img src="image/projects_list.png" alt="项目列表" width="90%"/>
-      <p><strong>项目管理</strong><br/>统一管理所有项目</p>
     </td>
   </tr>
   <tr>
     <td align="center">
       <img src="image/build_tasks.png" alt="构建任务" width="90%"/>
-      <p><strong>构建任务</strong><br/>手动触发构建</p>
     </td>
     <td align="center">
       <img src="image/build_execution.png" alt="构建需求" width="90%"/>
-      <p><strong>构建需求</strong><br/>填写构建需求</p>
     </td>
   </tr>
   <tr>
     <td align="center">
       <img src="image/build_tasks_log.png" alt="构建日志" width="90%"/>
-      <p><strong>构建日志</strong><br/>实时查看构建过程和结果</p>
     </td>
     <td align="center">
       <img src="image/build_history1.png" alt="构建历史1" width="90%"/>
-      <p><strong>构建历史</strong><br/>阶段错误状态追踪</p>
     </td>
   </tr>
   <tr>
     <td align="center">
       <img src="image/build_history2.png" alt="构建历史2" width="90%"/>
-      <p><strong>构建详情</strong><br/>暂停状态追踪</p>
     </td>
     <td align="center">
       <img src="image/build_history3.png" alt="构建历史3" width="90%"/>
-      <p><strong>构建历史日志</strong><br/>详细日志记录</p>
     </td>
   </tr>
   <tr>
     <td align="center">
       <img src="image/system_basic.png" alt="系统设置" width="90%"/>
-      <p><strong>系统基础设置</strong><br/>灵活的系统配置管理</p>
     </td>
     <td align="center">
       <img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="90%"/>
-      <p><strong>凭据管理</strong><br/>安全的凭据和配置文件管理</p>
     </td>
   </tr>
 </table>
-
-## 项目背景
-
-在日常开发工作中，我发现现有的工作流程存在一些功能缺失。市面上的CI/CD工具虽然功能丰富，但往往存在以下问题：
-
-1. 与公司现有流程不匹配，需要大量定制。比如我们不允许自动化构建（webhook调用），只允许测试手动构建，便于知道发布之后修改了什么功能/bug。
-2. 功能过于复杂，团队实际只需要其中一小部分
-3. 学习和维护成本高（Jenkins Pipeline）
-4. 难以满足团队特定的自动化需求
-
-LiteOps正是基于这些实际问题开发的，它不追求"高大上"的全面解决方案，而是专注于解决团队日常工作中的实际痛点，提供刚好满足需求的功能。更多的是发布记录功能。如：测试去构建的时候需要去填写构建需求、可观测发布分支最后提交人以及提交commit记录。
 
 ## 技术架构
 
@@ -288,5 +269,7 @@ LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但�
 
 - **邮箱**：hukdoesn@163.com
 - **GitHub Issues**：[提交问题或建议](https://github.com/hukdoesn/liteops/issues)
+
+<img src="image/wechat.png" alt="Magic Gardens" width="300">
 
 ---
