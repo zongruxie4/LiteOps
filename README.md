@@ -9,10 +9,11 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vue.js-3-42b883?style=flat-square&logo=vue.js" alt="Vue 3"/>
-  <img src="https://img.shields.io/badge/Django-4.2-092e20?style=flat-square&logo=django" alt="Django"/>
-  <img src="https://img.shields.io/badge/MySQL-8.0-4479a1?style=flat-square&logo=mysql" alt="MySQL"/>
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ed?style=flat-square&logo=docker" alt="Docker"/>
+  <img src="https://img.shields.io/badge/Python-3.9-14354C.svg?logo=python&logoColor=white" alt="Python 3.9"/>
+  <img src="https://img.shields.io/badge/Vue.js-3-35495e.svg?logo=vue.js&logoColor=4FC08D" alt="Vue 3"/>
+  <img src="https://img.shields.io/badge/Django-4.2-092E20.svg?logo=django&logoColor=white" alt="Django"/>
+  <img src="https://img.shields.io/badge/mysql-8-00000f.svg?logo=mysql&logoColor=white" alt="MySQL"/>
+  <img src="https://img.shields.io/docker/pulls/liteops/liteops?logo=docker&logoColor=white" alt="Docker Pulls"/>
 </p>
 
 
@@ -21,15 +22,13 @@
 
 ## LiteOps CICD 平台概述
 
-LiteOps是一个实用型的CI/CD平台。它并非追求大而全的DevOps解决方案，而是聚焦于团队日常工作中真正需要的自动化构建、和部署功能，帮助开发团队提高效率，减少重复性工作。
+LiteOps 是一个专注实用性的 CI/CD 平台。只解决真问题 —— 自动化构建、部署 一体化平台。
 
 ## 项目特点
 
-LiteOps的核心特点是"实用、贴合需求、易于使用"：
-
-- **实用为先**：基于公司现有流程开发，解决实际问题，没有多余花里胡哨功能
-- **贴合需求**：针对团队缺少的功能进行定制开发，填补工作流程中的空白
-- **易于使用**：简洁直观的界面设计，降低使用门槛，减少学习成本，倾向于Jenkins 自由风格Job
+- **够用就好**：基于实际工作流程设计，没有复杂功能
+- **上手简单**：界面直观，学习成本低，像 Jenkins 自由风格 Job 一样简单
+- **针对痛点**：专门解决团队缺失的环节
 
 ## 功能预览
 
@@ -97,66 +96,13 @@ LiteOps采用前后端分离的架构设计：
 - **Python-GitLab**：GitLab API客户端
 - **JWT认证**：用户身份验证
 
-### 部署架构
-
-LiteOps采用容器化部署方案，主要包含以下组件：
-
-```
-┌─────────────────────┐    ┌─────────────────────┐
-│   Nginx (Port 80)   │    │  Django (Port 8900) │
-│   静态文件服务        │◄───┤  后端API服务         │
-└─────────────────────┘    └─────────────────────┘
-                                       │
-                           ┌─────────────────────┐
-                           │  MySQL (Port 3306)  │
-                           │  数据库服务          │
-                           └─────────────────────┘
-                                       │
-                           ┌─────────────────────┐
-                           │  Docker in Docker   │
-                           │  CI/CD构建环境       │
-                           └─────────────────────┘
-```
-
-**部署特点**：
-- **Docker**：容器化部署，环境一致性
-- **Docker in Docker**：支持CI/CD构建环境，完全隔离
-- **一键部署**：自动化脚本部署，简化操作流程
-- **多阶段构建**：优化镜像大小，提高构建效率
-
 ## 项目目标
 
-LiteOps的目标是解决团队在开发流程中的实际问题，具体包括：
-
-1. 自动化团队中重复性高的构建和部署工作，节省人力成本
-2. 标准化项目的构建流程，减少人为错误
-3. 提供清晰的构建状态和日志，方便问题排查
-4. 支持团队特有的部署需求，适应现有的服务器环境
-5. 简化权限管理
-
-## 适用场景
-
-LiteOps主要适用于以下场景：
-
-- 需要解决特定CI/CD痛点的开发团队
-- 现有流程中缺少自动化构建和部署环节的项目
-- 希望减少手动操作、提高效率的开发环境
-- 对现有工具不满意，需要更贴合实际工作流程的解决方案
+1. 把重复性、手动上传的构建部署工作自动化掉
+2. 减少人为操作错误，标准化流程  
+3. 提供清晰的构建状态和日志，出问题能快速定位
 
 ## 🚀 快速部署
-
-### 前置要求
-
-在开始部署之前，请确保你的系统满足以下要求：
-
-- **操作系统**：Linux (推荐 Ubuntu 20.04+、CentOS 7+)
-- **Docker**：版本 20.0+ 
-- **Docker Compose**：版本 2.0+
-- **磁盘空间**：至少 5GB 可用空间
-- **内存**：推荐 4GB
-- **网络**：能够访问 Docker Hub 和相关软件源
-
-### 快速开始
 
 #### 1. 获取部署文件
 
@@ -169,11 +115,8 @@ LiteOps主要适用于以下场景：
 #### 2. 获取Docker镜像
 
 ```bash
-# 拉取LiteOps镜像（如果有公开镜像仓库）
-docker pull liteops/liteops:v1
-
-# 或者从提供的镜像文件加载
-# docker load < liteops-v1.tar
+# 拉取LiteOps镜像
+docker pull liteops/liteops:[最新版本号]
 ```
 
 #### 3. 准备部署文件
@@ -203,7 +146,6 @@ chmod +x start-containers.sh
 ```
 
 启动脚本会自动完成以下操作：
-
 
 #### 5. 验证部署
 
@@ -249,9 +191,76 @@ docker logs liteops-mysql
 - **用户名**：admin
 - **密码**：admin123 (初始密码，可自行修改)
 
+## 📋 手动部署（源码启动）
+
+如果你想从源码运行 LiteOps，可以按照以下步骤操作：
+
+### 环境要求
+
+- **Python**：3.8+
+- **Node.js**：16+
+- **MySQL**：8.0+
+- **Git**：用于克隆源码
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/opsre/LiteOps.git
+cd LiteOps
+```
+
+### 2. 后端部署
+
+```bash
+# 进入后端目录
+cd backend
+
+# 安装 Python 依赖
+pip3 install -r requirements.txt
+
+# 配置数据库（请先创建数据库并导入 liteops_init.sql）
+# 修改 backend/config.txt 中的数据库配置
+
+# 启动后端服务
+python3 -m uvicorn backend.asgi:application --host 0.0.0.0 --port 8900
+```
+
+### 3. 前端部署
+
+```bash
+# 新开终端，进入前端目录
+cd web
+
+# 安装依赖
+npm i
+# 或者
+npm install
+
+# 开发模式启动
+npm run dev
+
+# 生产环境构建
+npm run build
+```
+
+### 4. 访问应用
+
+- **开发模式**：
+  - 前端：http://localhost:8080
+  - 后端：http://localhost:8900
+  
+- **生产模式**：
+  - 配置 Nginx Web 服务器托管前端构建文件
+  - 后端继续使用 http://localhost:8900
+
+### 注意事项
+
+- 确保 MySQL 服务正常运行，并已导入初始化 SQL 文件
+- 修改前端 API 地址配置以匹配后端服务地址
+
 ## 项目当前状态
 
-LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但仍有许多需求和功能有待完善，。我希望通过开放的方式收集更多的需求和建议，使这个项目能够更好地服务于实际开发场景。
+LiteOps目前处于很多功能未完善状态，虽然核心功能已经初步实现，但仍有许多需求和功能有待完善，。我希望通过开源的方式收集更多的需求和建议，使这个项目能够更好地服务于实际开发场景。
 
 ### 需求征集
 
@@ -273,3 +282,5 @@ LiteOps目前处于未完善状态，虽然核心功能已经初步实现，但�
 <img src="image/wechat.png" alt="Magic Gardens" width="300">
 
 ---
+
+[![Star History Chart](https://api.star-history.com/svg?repos=opsre/LiteOps&type=Date)](https://www.star-history.com/#opsre/LiteOps&Date)
