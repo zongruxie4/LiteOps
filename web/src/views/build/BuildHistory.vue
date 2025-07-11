@@ -172,6 +172,7 @@
                     查看日志
                   </a-button>
                   <a-button 
+                    disabled
                     type="primary" 
                     danger 
                     @click="handleRollback(record)"
