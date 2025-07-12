@@ -16,7 +16,7 @@ __pycache__/
 db.sqlite3
 /backend/backups/
 /liteops-www/
-package.json
+/package.json
 
 # Node
 node_modules/
