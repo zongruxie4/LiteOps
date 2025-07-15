@@ -43,7 +43,7 @@ CREATE TABLE `build_history` (
   KEY `build_history_operator_id_f43bdff4_fk_user_user_id` (`operator_id`),
   CONSTRAINT `build_history_operator_id_f43bdff4_fk_user_user_id` FOREIGN KEY (`operator_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `build_history_task_id_dfb7725d_fk_build_task_task_id` FOREIGN KEY (`task_id`) REFERENCES `build_task` (`task_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for build_task
@@ -71,10 +71,13 @@ CREATE TABLE `build_task` (
   `version` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `build_time` json NOT NULL DEFAULT (_utf8mb3'{}'),
   `requirement` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
-  `building_status` varchar(20) COLLATE utf8mb4_bin DEFAULT NULL,
+  `building_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `external_script_config` json NOT NULL DEFAULT (_utf8mb3'{}'),
   `use_external_script` tinyint(1) NOT NULL,
   `parameters` json NOT NULL DEFAULT (_utf8mb3'[]'),
+  `auto_build_branches` json NOT NULL DEFAULT (_utf8mb3'[]'),
+  `auto_build_enabled` tinyint(1) NOT NULL,
+  `webhook_token` varchar(64) COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `task_id` (`task_id`),
   KEY `build_task_creator_id_e702c745_fk_user_user_id` (`creator_id`),
@@ -85,95 +88,7 @@ CREATE TABLE `build_task` (
   CONSTRAINT `build_task_environment_id_8f5e7798_fk_environment_environment_id` FOREIGN KEY (`environment_id`) REFERENCES `environment` (`environment_id`),
   CONSTRAINT `build_task_git_token_id_813ab2b1_fk_gitlab_to` FOREIGN KEY (`git_token_id`) REFERENCES `gitlab_token_credential` (`credential_id`),
   CONSTRAINT `build_task_project_id_f92c80ac_fk_project_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`project_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_admin_log
--- ----------------------------
-DROP TABLE IF EXISTS `django_admin_log`;
-CREATE TABLE `django_admin_log` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `action_time` datetime(6) NOT NULL,
-  `object_id` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
-  `object_repr` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `action_flag` smallint unsigned NOT NULL,
-  `change_message` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `content_type_id` int DEFAULT NULL,
-  `user_id` int NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `django_admin_log_content_type_id_c4bce8eb_fk_django_co` (`content_type_id`),
-  KEY `django_admin_log_user_id_c564eba6_fk_auth_user_id` (`user_id`),
-  CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),
-  CONSTRAINT `django_admin_log_user_id_c564eba6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`),
-  CONSTRAINT `django_admin_log_chk_1` CHECK ((`action_flag` >= 0))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_apscheduler_djangojob
--- ----------------------------
-DROP TABLE IF EXISTS `django_apscheduler_djangojob`;
-CREATE TABLE `django_apscheduler_djangojob` (
-  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `next_run_time` datetime(6) DEFAULT NULL,
-  `job_state` longblob NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `django_apscheduler_djangojob_next_run_time_2f022619` (`next_run_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_apscheduler_djangojobexecution
--- ----------------------------
-DROP TABLE IF EXISTS `django_apscheduler_djangojobexecution`;
-CREATE TABLE `django_apscheduler_djangojobexecution` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `run_time` datetime(6) NOT NULL,
-  `duration` decimal(15,2) DEFAULT NULL,
-  `finished` decimal(15,2) DEFAULT NULL,
-  `exception` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `traceback` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
-  `job_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_job_executions` (`job_id`,`run_time`),
-  KEY `django_apscheduler_djangojobexecution_run_time_16edd96b` (`run_time`),
-  CONSTRAINT `django_apscheduler_djangojobexecution_job_id_daf5090a_fk` FOREIGN KEY (`job_id`) REFERENCES `django_apscheduler_djangojob` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_content_type
--- ----------------------------
-DROP TABLE IF EXISTS `django_content_type`;
-CREATE TABLE `django_content_type` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `app_label` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_migrations
--- ----------------------------
-DROP TABLE IF EXISTS `django_migrations`;
-CREATE TABLE `django_migrations` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `app` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `applied` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
--- ----------------------------
--- Table structure for django_session
--- ----------------------------
-DROP TABLE IF EXISTS `django_session`;
-CREATE TABLE `django_session` (
-  `session_key` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `session_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `expire_date` datetime(6) NOT NULL,
-  PRIMARY KEY (`session_key`),
-  KEY `django_session_expire_date_a5c62663` (`expire_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for environment
@@ -192,7 +107,7 @@ CREATE TABLE `environment` (
   UNIQUE KEY `environment_id` (`environment_id`),
   KEY `environment_creator_id_2f30820a_fk_user_user_id` (`creator_id`),
   CONSTRAINT `environment_creator_id_2f30820a_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for gitlab_token_credential
@@ -211,7 +126,7 @@ CREATE TABLE `gitlab_token_credential` (
   UNIQUE KEY `credential_id` (`credential_id`),
   KEY `gitlab_token_credential_creator_id_d53c3666_fk_user_user_id` (`creator_id`),
   CONSTRAINT `gitlab_token_credential_creator_id_d53c3666_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for kubeconfig_credential
@@ -232,7 +147,7 @@ CREATE TABLE `kubeconfig_credential` (
   UNIQUE KEY `credential_id` (`credential_id`),
   KEY `kubeconfig_credential_creator_id_a3490ac1_fk_user_user_id` (`creator_id`),
   CONSTRAINT `kubeconfig_credential_creator_id_a3490ac1_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for login_attempt
@@ -249,7 +164,7 @@ CREATE TABLE `login_attempt` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `login_attempt_user_id_ip_address_a69098a0_uniq` (`user_id`,`ip_address`),
   CONSTRAINT `login_attempt_user_id_0f42fcb7_fk_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for login_log
@@ -268,7 +183,7 @@ CREATE TABLE `login_log` (
   UNIQUE KEY `log_id` (`log_id`),
   KEY `login_log_user_id_69642132_fk_user_user_id` (`user_id`),
   CONSTRAINT `login_log_user_id_69642132_fk_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for notification_robot
@@ -292,7 +207,7 @@ CREATE TABLE `notification_robot` (
   UNIQUE KEY `robot_id` (`robot_id`),
   KEY `notification_robot_creator_id_de406276_fk_user_user_id` (`creator_id`),
   CONSTRAINT `notification_robot_creator_id_de406276_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for project
@@ -312,7 +227,7 @@ CREATE TABLE `project` (
   UNIQUE KEY `project_id` (`project_id`),
   KEY `project_creator_id_e70918ae_fk_user_user_id` (`creator_id`),
   CONSTRAINT `project_creator_id_e70918ae_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for role
@@ -332,7 +247,7 @@ CREATE TABLE `role` (
   UNIQUE KEY `name` (`name`),
   KEY `role_creator_id_37780e7e_fk_user_user_id` (`creator_id`),
   CONSTRAINT `role_creator_id_37780e7e_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for security_config
@@ -348,7 +263,7 @@ CREATE TABLE `security_config` (
   `enable_2fa` tinyint(1) NOT NULL,
   `update_time` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for ssh_key_credential
@@ -368,7 +283,7 @@ CREATE TABLE `ssh_key_credential` (
   UNIQUE KEY `credential_id` (`credential_id`),
   KEY `ssh_key_credential_creator_id_c7396682_fk_user_user_id` (`creator_id`),
   CONSTRAINT `ssh_key_credential_creator_id_c7396682_fk_user_user_id` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for user
@@ -389,7 +304,7 @@ CREATE TABLE `user` (
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for user_role
@@ -406,7 +321,7 @@ CREATE TABLE `user_role` (
   KEY `user_role_role_id_6a11361a_fk_role_role_id` (`role_id`),
   CONSTRAINT `user_role_role_id_6a11361a_fk_role_role_id` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`),
   CONSTRAINT `user_role_user_id_12d84374_fk_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- Table structure for user_token
@@ -423,7 +338,7 @@ CREATE TABLE `user_token` (
   UNIQUE KEY `token_id` (`token_id`),
   KEY `user_token_user_id_69e1f632_fk_user_user_id` (`user_id`),
   CONSTRAINT `user_token_user_id_69e1f632_fk_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
 -- 初始化数据

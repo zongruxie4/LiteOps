@@ -154,6 +154,10 @@ class BuildTaskView(View):
                             'external_script_directory': task.external_script_config.get('directory', '') if task.external_script_config else '',
                             'external_script_branch': task.external_script_config.get('branch', '') if task.external_script_config else '',
                             'external_script_token_id': task.external_script_config.get('token_id') if task.external_script_config else None,
+                            # 自动构建配置
+                            'auto_build_enabled': task.auto_build_enabled,
+                            'auto_build_branches': task.auto_build_branches,
+                            'webhook_token': task.webhook_token,
                             'status': task.status,
                             'building_status': task.building_status,  # 添加构建状态字段
                             'version': task.version,
@@ -339,6 +343,11 @@ class BuildTaskView(View):
                 parameters = data.get('parameters', [])
                 notification_channels = data.get('notification_channels', [])
 
+                # 自动构建配置
+                auto_build_enabled = data.get('auto_build_enabled', False)
+                auto_build_branches = data.get('auto_build_branches', [])
+                webhook_token = data.get('webhook_token', '')
+
                 # 外部脚本库配置
                 use_external_script = data.get('use_external_script')
                 external_script_config = None
@@ -447,6 +456,11 @@ class BuildTaskView(View):
                             'message': 'GitLab Token凭证不存在'
                         })
 
+                # 如果启用自动构建但没有webhook_token，生成一个
+                if auto_build_enabled and not webhook_token:
+                    import secrets
+                    webhook_token = secrets.token_urlsafe(32)
+
                 # 创建构建任务
                 creator = User.objects.get(user_id=request.user_id)
                 task = BuildTask.objects.create(
@@ -462,6 +476,9 @@ class BuildTaskView(View):
                     notification_channels=notification_channels,
                     use_external_script=use_external_script,
                     external_script_config=external_script_config,
+                    auto_build_enabled=auto_build_enabled,
+                    auto_build_branches=auto_build_branches,
+                    webhook_token=webhook_token,
                     creator=creator
                 )
 
@@ -504,6 +521,11 @@ class BuildTaskView(View):
                 parameters = data.get('parameters')
                 notification_channels = data.get('notification_channels')
                 status = data.get('status')
+
+                # 自动构建配置
+                auto_build_enabled = data.get('auto_build_enabled')
+                auto_build_branches = data.get('auto_build_branches')
+                webhook_token = data.get('webhook_token')
 
                 # 外部脚本库配置
                 use_external_script = data.get('use_external_script')
@@ -690,6 +712,25 @@ class BuildTaskView(View):
                 if 'use_external_script' in data:
                     task.use_external_script = use_external_script
                     task.external_script_config = external_script_config
+
+                # 更新自动构建配置
+                if 'auto_build_enabled' in data:
+                    task.auto_build_enabled = auto_build_enabled
+                    
+                    if auto_build_enabled:
+                        # 如果启用自动构建但没有webhook_token，生成一个
+                        if not task.webhook_token and not webhook_token:
+                            import secrets
+                            task.webhook_token = secrets.token_urlsafe(32)
+                        elif webhook_token is not None:
+                            task.webhook_token = webhook_token
+                    else:
+                        # 如果取消自动构建，清除所有相关配置
+                        task.auto_build_branches = []
+                        task.webhook_token = ''
+                        
+                if 'auto_build_branches' in data and auto_build_enabled:
+                    task.auto_build_branches = auto_build_branches
 
                 task.save()
 

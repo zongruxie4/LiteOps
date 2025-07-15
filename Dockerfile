@@ -52,14 +52,14 @@ RUN set -eux; \
     # SSH客户端基础配置
     mkdir -p /root/.ssh && \
     chmod 700 /root/.ssh && \
-    # 轻量化安装NVM
+    # 安装NVM
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash && \
     echo 'export NVM_DIR="$HOME/.nvm"' >> /root/.bashrc && \
     echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /root/.bashrc && \
     echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use' >> /root/.profile && \
     # 创建Java和Maven安装目录
     mkdir -p /usr/local/java /usr/local/maven && \
-    # 安装精简版Docker Engine
+    # 安装Docker Engine
     (curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null) || \
     (curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
@@ -75,7 +75,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/* /root/.cache/*
 
 # =============================================================================
-# 精简Java环境安装
+# Java环境安装
 # =============================================================================
 COPY jdk-8u211-linux-x64.tar.gz apache-maven-3.8.8-bin.tar.gz /tmp/
 
@@ -85,12 +85,12 @@ RUN set -eux; \
     tar -xzf /tmp/apache-maven-3.8.8-bin.tar.gz -C /usr/local/maven && \
     # 立即清理压缩包
     rm -f /tmp/jdk-8u211-linux-x64.tar.gz /tmp/apache-maven-3.8.8-bin.tar.gz && \
-    # 极度精简JDK - 删除所有不必要的文件
+    # 删除所有不必要的文件
     cd /usr/local/java/jdk1.8.0_211 && \
     rm -rf src.zip javafx-src.zip man sample demo \
            COPYRIGHT LICENSE README.html THIRDPARTYLICENSEREADME.txt \
            release ASSEMBLY_EXCEPTION && \
-    # 删除不常用的JDK工具（保留核心编译和运行工具）
+    # 删除不常用的JDK工具
     cd bin && \
     rm -f appletviewer extcheck jarsigner java-rmi.cgi \
           javadoc javah javap javaws jcmd jconsole jdb jhat \
@@ -105,7 +105,7 @@ RUN set -eux; \
     cd bin && \
     rm -f javaws jvisualvm orbd policytool rmid \
           rmiregistry servertool tnameserv && \
-    # 精简Maven安装，删除文档和示例
+    # Maven安装，删除文档和示例
     cd /usr/local/maven/apache-maven-3.8.8 && \
     rm -rf LICENSE NOTICE README.txt
 
@@ -166,7 +166,7 @@ RUN set -eux; \
     # 配置pip镜像源
     pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip config set install.trusted-host mirrors.aliyun.com && \
-    # 安装精简版Docker Engine
+    # 安装Docker Engine
     (curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null) || \
     (curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
@@ -194,17 +194,17 @@ RUN set -eux; \
            /usr/share/man/* /usr/share/locale/* /usr/share/info/*
 
 # =============================================================================
-# 从构建阶段复制精简的文件
+# 从构建阶段复制文件
 # =============================================================================
 # 复制SSH配置
 COPY --from=builder /root/.ssh /root/.ssh
 
-# 复制精简的NVM环境
+# 复制NVM环境
 COPY --from=builder /root/.nvm /root/.nvm
 COPY --from=builder /root/.bashrc /root/.bashrc
 COPY --from=builder /root/.profile /root/.profile
 
-# 复制精简后的Java环境
+# 复制Java环境
 COPY --from=builder /usr/local/java /usr/local/java
 COPY --from=builder /usr/local/maven /usr/local/maven
 
@@ -223,7 +223,7 @@ RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 # 复制前端构建文件到Nginx静态文件目录
 COPY web/dist/ /usr/share/nginx/html/
 
-# 优化Python依赖安装
+# Python依赖安装
 COPY backend/requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt && \
     # 清理pip缓存和不必要的文件

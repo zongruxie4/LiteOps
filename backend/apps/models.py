@@ -226,46 +226,22 @@ class BuildTask(models.Model):
     stages = models.JSONField(default=list, verbose_name='构建阶段')
 
     # 构建参数配置
-    parameters = models.JSONField(default=list, verbose_name='构建参数配置', help_text='''
-    [
-        {
-            "name": "MY_SERVICES",
-            "description": "选择要部署的服务",
-            "choices": ["user-service", "order-service", "payment-service"],
-            "default_values": ["user-service"]
-        }
-    ]
-    ''')
+    parameters = models.JSONField(default=list, verbose_name='构建参数配置')
 
     # 外部脚本库配置
     use_external_script = models.BooleanField(default=False, verbose_name='使用外部脚本库')
-    external_script_config = models.JSONField(default=dict, verbose_name='外部脚本库配置', help_text='''
-    {
-        "repo_url": "https://github.com/example/scripts.git",  # Git仓库地址
-        "directory": "/data/scripts",  # 存放目录
-        "branch": "main",  # 分支名称（可选）
-        "token_id": "credential_id"  # Git Token凭证ID（私有仓库）
-    }
-    ''')
+    external_script_config = models.JSONField(default=dict, verbose_name='外部脚本库配置')
 
     # 构建时间信息（使用JSON存储）
-    build_time = models.JSONField(default=dict, verbose_name='构建时间信息', help_text='''
-    {
-        "total_duration": "300",  # 总耗时（秒）
-        "start_time": "2024-03-06 12:00:00",  # 开始时间
-        "end_time": "2024-03-06 12:05:00",  # 结束时间
-        "stages_time": [  # 各阶段时间信息
-            {
-                "name": "代码拉取",
-                "start_time": "2024-03-06 12:00:00",
-                "duration": "60"  # 耗时（秒）
-            }
-        ]
-    }
-    ''')
+    build_time = models.JSONField(default=dict, verbose_name='构建时间信息')
 
     # 构建后操作
     notification_channels = models.JSONField(default=list, verbose_name='通知方式')
+
+    # 自动构建配置
+    auto_build_enabled = models.BooleanField(default=False, verbose_name='启用自动构建')
+    auto_build_branches = models.JSONField(default=list, verbose_name='自动构建分支')
+    webhook_token = models.CharField(max_length=64, null=True, blank=True, verbose_name='Webhook验证Token')
 
     # 状态和统计
     status = models.CharField(max_length=20, default='created', null=True, verbose_name='任务状态')  # created, disabled
@@ -299,26 +275,8 @@ class BuildHistory(models.Model):
     requirement = models.TextField(null=True, blank=True, verbose_name='构建需求描述')
     build_log = models.TextField(null=True, blank=True, verbose_name='构建日志')
     stages = models.JSONField(default=list, verbose_name='构建阶段')
-    parameter_values = models.JSONField(default=dict, verbose_name='构建参数值', help_text='''
-    {
-        "MY_SERVICES": ["user-service", "order-service"],
-        "FEATURE_FLAGS": ["enable-cache"]
-    }
-    ''')
-    build_time = models.JSONField(default=dict, verbose_name='构建时间信息', help_text='''
-    {
-        "total_duration": "300",  # 总耗时（秒）
-        "start_time": "2024-03-06 12:00:00",  # 开始时间
-        "end_time": "2024-03-06 12:05:00",  # 结束时间
-        "stages_time": [  # 各阶段时间信息
-            {
-                "name": "代码拉取",
-                "start_time": "2024-03-06 12:00:00",
-                "duration": "60"  # 耗时（秒）
-            }
-        ]
-    }
-    ''')
+    parameter_values = models.JSONField(default=dict, verbose_name='构建参数值')
+    build_time = models.JSONField(default=dict, verbose_name='构建时间信息')
 
     operator = models.ForeignKey('User', on_delete=models.SET_NULL, to_field='user_id', null=True, verbose_name='构建人')
     create_time = models.DateTimeField(auto_now_add=True, null=True, verbose_name='创建时间')
@@ -329,7 +287,7 @@ class BuildHistory(models.Model):
         verbose_name = '构建历史'
         verbose_name_plural = verbose_name
         ordering = ['-create_time']
-        unique_together = ['task', 'build_number']  # 确保任务和构建号的组合唯一
+        unique_together = ['task', 'build_number'] 
 
     def __str__(self):
         return f"{self.task.name} #{self.build_number}"

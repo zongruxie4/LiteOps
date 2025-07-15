@@ -13,6 +13,7 @@ from apps.views.user import UserView, UserProfileView
 from apps.views.role import RoleView, UserPermissionView
 from apps.views.logs import login_logs_list, login_log_detail
 from apps.views.dashboard import DashboardStatsView, BuildTrendView, BuildDetailView, RecentBuildsView, ProjectDistributionView
+from apps.views.webhook import GitLabWebhookView
 
 from apps.views.security import SecurityConfigView
 
@@ -39,6 +40,9 @@ urlpatterns = [
     
     # SSE构建日志流
     path('api/build/logs/stream/<str:task_id>/<str:build_number>/', BuildLogSSEView.as_view(), name='build-log-sse'),
+
+    # GitLab Webhook
+    path('api/webhook/gitlab/<str:task_id>/', GitLabWebhookView.as_view(), name='gitlab-webhook'),
 
     # 通知机器人相关路由
     path('api/notification/robots/', NotificationRobotView.as_view(), name='notification-robots'),

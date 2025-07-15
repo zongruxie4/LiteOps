@@ -211,6 +211,59 @@
           </a-button>
         </div>
 
+        <a-divider>自动构建配置</a-divider>
+        <div class="auto-build-config">
+          <a-form-item>
+            <a-checkbox v-model:checked="formState.auto_build_enabled" @change="handleAutoBuildChange">
+              <ThunderboltOutlined style="color: #52c41a; margin-right: 4px;" />
+              启用自动构建
+            </a-checkbox>
+            <div class="config-description">当代码推送到配置的分支时，自动触发构建任务</div>
+          </a-form-item>
+          
+          <div v-if="formState.auto_build_enabled" class="auto-build-details">
+                         <a-form-item label="自动构建分支" required>
+               <a-select
+                 v-model:value="formState.auto_build_branches"
+                 mode="tags"
+                 placeholder="输入分支名称，如：main, develop, release-v1.0"
+                 style="width: 100%"
+                 :token-separators="[',', ' ']"
+               >
+                 <a-select-option value="main">main</a-select-option>
+                 <a-select-option value="master">master</a-select-option>
+                 <a-select-option value="develop">develop</a-select-option>
+               </a-select>
+               <div class="form-item-help">请输入精确的分支名称，多个分支用逗号或空格分隔</div>
+             </a-form-item>
+
+            <a-form-item label="Webhook URL">
+              <a-input
+                :value="webhookUrl"
+                readonly
+                :addonBefore="'POST'"
+              >
+                <template #suffix>
+                  <a-tooltip title="复制Webhook URL">
+                    <a-button type="text" size="small" @click="copyWebhookUrl">
+                      <CopyOutlined />
+                    </a-button>
+                  </a-tooltip>
+                </template>
+              </a-input>
+              <div class="form-item-help">将此URL配置到GitLab项目的Webhook中，触发事件选择"Push events"</div>
+            </a-form-item>
+
+            <a-alert
+              message="自动构建说明"
+              description="启用自动构建后，当有代码推送到配置的分支时，系统将自动触发构建。构建参数将使用默认值，构建需求描述将自动获取最新提交信息。"
+              type="info"
+              show-icon
+              style="margin-top: 16px;"
+            />
+          </div>
+        </div>
+
         <a-divider>构建阶段</a-divider>
         <div class="stages-list">
           <div v-for="(stage, index) in formState.stages" :key="index" class="stage-item">
@@ -389,7 +442,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue';
+import { ref, reactive, onMounted, nextTick, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -485,6 +538,10 @@ const formState = reactive({
   ],
   parameters: [],
   notification_channels: [],
+  // 自动构建配置
+  auto_build_enabled: false,
+  auto_build_branches: [],
+  webhook_token: '',
 });
 
 // 表单校验规则
@@ -756,6 +813,11 @@ const loadTaskDetail = async (taskId) => {
       
       formState.notification_channels = response.data.data.notification_channels || [];
       
+      // 自动构建配置
+      formState.auto_build_enabled = response.data.data.auto_build_enabled || false;
+      formState.auto_build_branches = response.data.data.auto_build_branches || [];
+      formState.webhook_token = response.data.data.webhook_token || '';
+      
       if (response.data.data.project) {
         formState.project_id = response.data.data.project.project_id;
       }
@@ -839,6 +901,11 @@ const loadTaskDetailForCopy = async (sourceTaskId) => {
       });
       
       formState.notification_channels = response.data.data.notification_channels || [];
+      
+      // 自动构建配置（复制时不复制webhook_token，会重新生成）
+      formState.auto_build_enabled = response.data.data.auto_build_enabled || false;
+      formState.auto_build_branches = response.data.data.auto_build_branches || [];
+      formState.webhook_token = ''; // 复制时重置webhook token
       
       if (response.data.data.project) {
         formState.project_id = response.data.data.project.project_id;
@@ -954,6 +1021,41 @@ const handleExternalScriptModalCancel = () => {
 const truncateUrl = (url) => {
   if (!url) return '';
   return url.length > 50 ? url.substring(0, 47) + '...' : url;
+};
+
+// Webhook URL
+const webhookUrl = computed(() => {
+  if (!formState.task_id && !isEdit.value) {
+    return '保存任务后将生成Webhook URL';
+  }
+  const taskId = formState.task_id || 'TASK_ID';
+  const token = formState.webhook_token || 'WEBHOOK_TOKEN';
+  const baseUrl = window.location.origin.replace(':5173', ':8900'); // 开发环境端口映射
+  return `${baseUrl}/api/webhook/gitlab/${taskId}/?token=${token}`;
+});
+
+// 处理自动构建配置变更
+const handleAutoBuildChange = (checked) => {
+  if (checked && !formState.webhook_token) {
+    // 生成webhook token
+    formState.webhook_token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
+  if (!checked) {
+    // 取消自动构建时清除所有相关配置
+    formState.auto_build_branches = [];
+    formState.webhook_token = '';
+  }
+};
+
+// 复制Webhook URL
+const copyWebhookUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(webhookUrl.value);
+    message.success('Webhook URL已复制到剪贴板');
+  } catch (error) {
+    console.error('复制失败:', error);
+    message.error('复制失败，请手动复制');
+  }
 };
 
 onMounted(async () => {
@@ -1160,5 +1262,22 @@ li {
 
 .external-script-summary :deep(.ant-descriptions-item-content) {
   color: #262626;
+}
+
+.auto-build-config {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  background-color: transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.auto-build-details {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: transparent;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
 }
 </style> 
