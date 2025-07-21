@@ -6,7 +6,7 @@
 
     <a-tabs v-model:activeKey="activeTabKey"  @change="handleTabChange">
       <!-- 安全设置 -->
-      <a-tab-pane key="security-config" tab="安全设置">
+      <a-tab-pane key="security-config" tab="设置">
         <a-card>
           <a-form
             ref="securityFormRef"
@@ -83,9 +83,9 @@
             </a-row>
 
             <a-form-item>
-              <a-button 
-                type="primary" 
-                @click="saveSecurityConfig" 
+              <a-button
+                type="primary"
+                @click="saveSecurityConfig"
                 :loading="securityLoading"
                 v-if="hasFunctionPermission('system_basic', 'edit')"
               >
@@ -93,11 +93,99 @@
               </a-button>
             </a-form-item>
           </a-form>
+
+          <!-- 分割线 -->
+          <a-divider>日志清理</a-divider>
+
+          <!-- 日志清理功能 -->
+          <a-form layout="vertical" v-if="hasFunctionPermission('system_basic', 'edit')">
+            <a-row :gutter="24">
+              <a-col :span="8">
+                <a-form-item label="日志类型">
+                  <a-select
+                    v-model:value="logCleanupForm.logType"
+                    placeholder="请选择日志类型"
+                    style="width: 100%"
+                    @change="handleLogTypeChange"
+                  >
+                    <a-select-option value="build">构建日志</a-select-option>
+                    <a-select-option value="login">登录日志</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="保留天数">
+                  <a-input-number
+                    v-model:value="logCleanupForm.daysBefore"
+                    :min="1"
+                    :max="365"
+                    style="width: 100%"
+                    placeholder="请输入保留天数"
+                    addon-after="天"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="操作">
+                  <a-button
+                    type="primary"
+                    danger
+                    @click="handleLogCleanup"
+                    :loading="logCleanupLoading"
+                    :disabled="!logCleanupForm.logType || !logCleanupForm.daysBefore"
+                    style="width: 100%"
+                  >
+                    清理日志
+                  </a-button>
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-row :gutter="24" v-if="logCleanupForm.logType === 'build'">
+              <a-col :span="24">
+                <a-form-item label="选择构建任务">
+                  <a-select
+                    v-model:value="logCleanupForm.selectedTasks"
+                    mode="multiple"
+                    placeholder="请选择要清理日志的构建任务，不选择则清理所有任务"
+                    style="width: 100%"
+                    :loading="buildTasksLoading"
+                    show-search
+                    :filter-option="filterBuildTasks"
+                    allow-clear
+                  >
+                    <a-select-option
+                      v-for="task in buildTasksList"
+                      :key="task.task_id"
+                      :value="task.task_id"
+                    >
+                      {{ task.name }} ({{ task.project_name }})
+                    </a-select-option>
+                  </a-select>
+                  <div class="form-item-help">
+                    将删除{{ logCleanupForm.selectedTasks.length > 0 ? '选定任务' : '所有任务' }}中超过{{ logCleanupForm.daysBefore || 0 }}天的构建日志
+                  </div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-row :gutter="24" v-if="logCleanupForm.logType === 'login'">
+              <a-col :span="24">
+                <a-alert
+                  message="登录日志清理说明"
+                  :description="`将删除超过${logCleanupForm.daysBefore || 0}天的所有登录日志记录，包括成功和失败的登录记录。`"
+                  type="info"
+                  show-icon
+                  style="margin-bottom: 16px"
+                />
+              </a-col>
+            </a-row>
+          </a-form>
         </a-card>
       </a-tab-pane>
 
       <!-- 通知配置 -->
-      <a-tab-pane key="notification-config" tab="通知配置">
+      <a-tab-pane key="notification-config" tab="通知">
         <a-card>
           <div class="notification-header">
             <a-button type="primary" @click="showAddRobot" v-if="hasFunctionPermission('system_basic', 'create')">
@@ -288,7 +376,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import axios from 'axios';
 import { hasFunctionPermission, checkPermission } from '../../utils/permission';
@@ -314,6 +402,16 @@ const securityRules = {
     { required: true, message: '请输入会话超时时间', trigger: 'blur' }
   ]
 };
+
+// 日志清理相关
+const buildTasksList = ref([]);
+const buildTasksLoading = ref(false);
+const logCleanupLoading = ref(false);
+const logCleanupForm = reactive({
+  logType: 'build',
+  selectedTasks: [],
+  daysBefore: 30
+});
 
 // 通知机器人相关
 const drawerVisible = ref(false);
@@ -388,6 +486,8 @@ const securityLoading = ref(false);
 const handleTabChange = (key) => {
   if (key === 'notification-config') {
     loadRobotList();
+  } else if (key === 'security-config') {
+    loadBuildTasksList();
   }
 };
 
@@ -605,8 +705,114 @@ const handleDeleteRobot = async (robot) => {
   }
 };
 
+// 获取构建任务列表
+const loadBuildTasksList = async () => {
+  try {
+    buildTasksLoading.value = true;
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/system/security/build-tasks/', {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      buildTasksList.value = response.data.data;
+    } else {
+      message.error(response.data.message || '获取构建任务列表失败');
+    }
+  } catch (error) {
+    console.error('Load build tasks error:', error);
+    message.error('获取构建任务列表失败');
+  } finally {
+    buildTasksLoading.value = false;
+  }
+};
+
+// 构建任务过滤函数
+const filterBuildTasks = (input, option) => {
+  return option.children[0].children.toLowerCase().includes(input.toLowerCase());
+};
+
+// 日志类型变化处理
+const handleLogTypeChange = () => {
+  // 切换日志类型清空构建任务选择
+  logCleanupForm.selectedTasks = [];
+};
+
+// 处理日志清理
+const handleLogCleanup = async () => {
+  try {
+    // 生成确认信息
+    let confirmContent = '';
+    if (logCleanupForm.logType === 'build') {
+      const taskCount = logCleanupForm.selectedTasks.length;
+      if (taskCount > 0) {
+        confirmContent = `确定要清理选定的${taskCount}个构建任务中${logCleanupForm.daysBefore}天前的构建日志吗？`;
+      } else {
+        confirmContent = `确定要清理所有构建任务中${logCleanupForm.daysBefore}天前的构建日志吗？`;
+      }
+    } else if (logCleanupForm.logType === 'login') {
+      confirmContent = `确定要清理${logCleanupForm.daysBefore}天前的所有登录日志吗？`;
+    }
+    confirmContent += '此操作不可恢复。';
+
+    // 确认对话框
+    const confirmed = await new Promise((resolve) => {
+      Modal.confirm({
+        title: '确认清理日志',
+        content: confirmContent,
+        okText: '确定清理',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false)
+      });
+    });
+
+    if (!confirmed) return;
+
+    logCleanupLoading.value = true;
+    const token = localStorage.getItem('token');
+
+    // 根据日志类型调用不同的API
+    let apiUrl = '';
+    let requestData = {};
+
+    if (logCleanupForm.logType === 'build') {
+      apiUrl = '/api/system/security/cleanup-build-logs/';
+      requestData = {
+        task_ids: logCleanupForm.selectedTasks,
+        days_before: logCleanupForm.daysBefore
+      };
+    } else if (logCleanupForm.logType === 'login') {
+      apiUrl = '/api/system/security/cleanup-login-logs/';
+      requestData = {
+        days_before: logCleanupForm.daysBefore
+      };
+    }
+
+    const response = await axios.post(apiUrl, requestData, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      message.success(response.data.message);
+      if (logCleanupForm.logType === 'build') {
+        logCleanupForm.selectedTasks = [];
+      }
+    } else {
+      message.error(response.data.message || '日志清理失败');
+    }
+  } catch (error) {
+    console.error('Cleanup logs error:', error);
+    message.error('日志清理失败');
+  } finally {
+    logCleanupLoading.value = false;
+  }
+};
+
 onMounted(() => {
   fetchSecurityConfig();
+  loadBuildTasksList();
 });
 </script>
 

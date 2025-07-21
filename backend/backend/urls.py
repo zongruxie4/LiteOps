@@ -15,7 +15,7 @@ from apps.views.logs import login_logs_list, login_log_detail
 from apps.views.dashboard import DashboardStatsView, BuildTrendView, BuildDetailView, RecentBuildsView, ProjectDistributionView
 from apps.views.webhook import GitLabWebhookView
 
-from apps.views.security import SecurityConfigView
+from apps.views.security import SecurityConfigView, get_build_tasks_for_cleanup, cleanup_build_logs, cleanup_login_logs
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -68,4 +68,7 @@ urlpatterns = [
 
     # 安全配置相关路由
     path('api/system/security/', SecurityConfigView.as_view(), name='security-config'),
+    path('api/system/security/build-tasks/', get_build_tasks_for_cleanup, name='build-tasks-for-cleanup'),
+    path('api/system/security/cleanup-build-logs/', cleanup_build_logs, name='cleanup-build-logs'),
+    path('api/system/security/cleanup-login-logs/', cleanup_login_logs, name='cleanup-login-logs'),
 ]

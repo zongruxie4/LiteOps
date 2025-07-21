@@ -4,9 +4,13 @@ from django.http import JsonResponse
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.db import transaction
-from ..models import SecurityConfig, User
+from django.utils import timezone
+from datetime import datetime, timedelta
+from ..models import SecurityConfig, User, BuildTask, BuildHistory, LoginLog
 from ..utils.auth import jwt_auth_required
+from ..utils.permissions import get_user_permissions
 
 logger = logging.getLogger('apps')
 
@@ -140,4 +144,227 @@ class SecurityConfigView(View):
             return JsonResponse({
                 'code': 500,
                 'message': f'服务器错误: {str(e)}'
-            }) 
+            })
+
+
+@csrf_exempt
+@jwt_auth_required
+@require_http_methods(["GET"])
+def get_build_tasks_for_cleanup(request):
+    """获取可用于日志清理的构建任务列表"""
+    try:
+        # 获取用户权限信息
+        user_permissions = get_user_permissions(request.user_id)
+        data_permissions = user_permissions.get('data', {})
+
+        # 检查用户是否有系统基本设置权限
+        function_permissions = user_permissions.get('function', {})
+        system_permissions = function_permissions.get('system_basic', [])
+
+        if 'view' not in system_permissions:
+            logger.warning(f'用户[{request.user_id}]没有系统基本设置查看权限')
+            return JsonResponse({
+                'code': 403,
+                'message': '没有权限查看构建任务'
+            }, status=403)
+
+        # 应用项目权限过滤
+        project_scope = data_permissions.get('project_scope', 'all')
+        if project_scope == 'custom':
+            permitted_project_ids = data_permissions.get('project_ids', [])
+            if not permitted_project_ids:
+                return JsonResponse({
+                    'code': 200,
+                    'message': '获取构建任务列表成功',
+                    'data': []
+                })
+            tasks = BuildTask.objects.filter(project__project_id__in=permitted_project_ids).select_related('project')
+        else:
+            tasks = BuildTask.objects.all().select_related('project')
+
+        # 格式化返回数据
+        task_list = []
+        for task in tasks:
+            task_list.append({
+                'task_id': task.task_id,
+                'name': task.name,
+                'project_name': task.project.name if task.project else '未知项目',
+                'total_builds': task.total_builds
+            })
+
+        return JsonResponse({
+            'code': 200,
+            'message': '获取构建任务列表成功',
+            'data': task_list
+        })
+
+    except Exception as e:
+        logger.error(f'获取构建任务列表失败: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'code': 500,
+            'message': f'服务器错误: {str(e)}'
+        })
+
+
+@csrf_exempt
+@jwt_auth_required
+@require_http_methods(["POST"])
+def cleanup_build_logs(request):
+    """清理构建日志"""
+    try:
+        # 获取用户权限信息
+        user_permissions = get_user_permissions(request.user_id)
+
+        # 检查用户是否有系统基本设置编辑权限
+        function_permissions = user_permissions.get('function', {})
+        system_permissions = function_permissions.get('system_basic', [])
+
+        if 'edit' not in system_permissions:
+            logger.warning(f'用户[{request.user_id}]没有系统基本设置编辑权限')
+            return JsonResponse({
+                'code': 403,
+                'message': '没有权限执行日志清理操作'
+            }, status=403)
+
+        data = json.loads(request.body)
+        task_ids = data.get('task_ids', [])
+        days_before = data.get('days_before', 30)
+
+        if not isinstance(days_before, int) or days_before < 1 or days_before > 365:
+            return JsonResponse({
+                'code': 400,
+                'message': '保留天数必须在1-365天之间'
+            })
+
+        # 计算截止日期
+        cutoff_date = timezone.now() - timedelta(days=days_before)
+
+        # 查询要删除的构建历史记录
+        if task_ids:
+            # 清理指定任务的日志
+            histories_to_delete = BuildHistory.objects.filter(
+                task__task_id__in=task_ids,
+                create_time__lt=cutoff_date
+            )
+        else:
+            # 清理所有任务的日志
+            histories_to_delete = BuildHistory.objects.filter(
+                create_time__lt=cutoff_date
+            )
+
+        # 统计信息
+        total_count = histories_to_delete.count()
+
+        if total_count == 0:
+            task_desc = f"{len(task_ids)}个指定任务" if task_ids else "所有任务"
+            return JsonResponse({
+                'code': 200,
+                'message': f'没有找到{task_desc}中需要清理的构建日志记录',
+                'data': {
+                    'deleted_count': 0,
+                    'task_count': len(task_ids) if task_ids else 0,
+                    'days_before': days_before
+                }
+            })
+
+        # 执行删除操作
+        with transaction.atomic():
+            deleted_count, _ = histories_to_delete.delete()
+
+            # 记录操作日志
+            user = User.objects.get(user_id=request.user_id)
+            task_desc = f"{len(task_ids)}个指定任务" if task_ids else "所有任务"
+            logger.info(f'用户[{user.username}]清理了{task_desc}{days_before}天前的构建日志，共删除{deleted_count}条记录')
+
+        return JsonResponse({
+            'code': 200,
+            'message': f'构建日志清理完成，共删除{deleted_count}条记录',
+            'data': {
+                'deleted_count': deleted_count,
+                'task_count': len(task_ids) if task_ids else 0,
+                'days_before': days_before
+            }
+        })
+
+    except Exception as e:
+        logger.error(f'清理构建日志失败: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'code': 500,
+            'message': f'服务器错误: {str(e)}'
+        })
+
+
+@csrf_exempt
+@jwt_auth_required
+@require_http_methods(["POST"])
+def cleanup_login_logs(request):
+    """清理登录日志"""
+    try:
+        # 获取用户权限信息
+        user_permissions = get_user_permissions(request.user_id)
+
+        # 检查用户是否有系统基本设置编辑权限
+        function_permissions = user_permissions.get('function', {})
+        system_permissions = function_permissions.get('system_basic', [])
+
+        if 'edit' not in system_permissions:
+            logger.warning(f'用户[{request.user_id}]没有系统基本设置编辑权限')
+            return JsonResponse({
+                'code': 403,
+                'message': '没有权限执行日志清理操作'
+            }, status=403)
+
+        data = json.loads(request.body)
+        days_before = data.get('days_before', 30)
+
+        # 验证输入参数
+        if not isinstance(days_before, int) or days_before < 1 or days_before > 365:
+            return JsonResponse({
+                'code': 400,
+                'message': '保留天数必须在1-365天之间'
+            })
+
+        # 计算截止日期
+        cutoff_date = timezone.now() - timedelta(days=days_before)
+
+        # 查询要删除的登录日志记录
+        logs_to_delete = LoginLog.objects.filter(
+            login_time__lt=cutoff_date
+        )
+
+        # 统计信息
+        total_count = logs_to_delete.count()
+
+        if total_count == 0:
+            return JsonResponse({
+                'code': 200,
+                'message': '没有找到需要清理的登录日志记录',
+                'data': {
+                    'deleted_count': 0,
+                    'days_before': days_before
+                }
+            })
+
+        # 执行删除操作
+        with transaction.atomic():
+            deleted_count, _ = logs_to_delete.delete()
+
+            # 记录操作日志
+            user = User.objects.get(user_id=request.user_id)
+            logger.info(f'用户[{user.username}]清理了{days_before}天前的登录日志，共删除{deleted_count}条记录')
+
+        return JsonResponse({
+            'code': 200,
+            'message': f'登录日志清理完成，共删除{deleted_count}条记录',
+            'data': {
+                'deleted_count': deleted_count,
+                'days_before': days_before
+            }
+        })
+
+    except Exception as e:
+        logger.error(f'清理登录日志失败: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'code': 500,
+            'message': f'服务器错误: {str(e)}'
+        })
