@@ -43,6 +43,10 @@ class SecurityConfigView(View):
                     'max_login_attempts': security_config.max_login_attempts,
                     'lockout_duration': security_config.lockout_duration,
                     'enable_2fa': security_config.enable_2fa,
+                    'watermark_enabled': security_config.watermark_enabled,
+                    'watermark_content': security_config.watermark_content,
+                    'watermark_show_time': security_config.watermark_show_time,
+                    'watermark_show_username': security_config.watermark_show_username,
                     'update_time': security_config.update_time.strftime('%Y-%m-%d %H:%M:%S') if security_config.update_time else None
                 }
             })
@@ -67,6 +71,10 @@ class SecurityConfigView(View):
                 max_login_attempts = data.get('max_login_attempts')
                 lockout_duration = data.get('lockout_duration')
                 enable_2fa = data.get('enable_2fa')
+                watermark_enabled = data.get('watermark_enabled')
+                watermark_content = data.get('watermark_content')
+                watermark_show_time = data.get('watermark_show_time')
+                watermark_show_username = data.get('watermark_show_username')
 
                 # 验证输入数据
                 if min_password_length is not None:
@@ -111,6 +119,18 @@ class SecurityConfigView(View):
                             'message': '账户锁定时间必须在5-60分钟之间'
                         })
 
+                if watermark_content is not None:
+                    if not isinstance(watermark_content, str) or len(watermark_content.strip()) == 0:
+                        return JsonResponse({
+                            'code': 400,
+                            'message': '水印内容不能为空'
+                        })
+                    if len(watermark_content) > 500:
+                        return JsonResponse({
+                            'code': 400,
+                            'message': '水印内容长度不能超过500字符'
+                        })
+
                 # 获取或创建安全配置
                 security_config, created = SecurityConfig.objects.get_or_create(id=1)
 
@@ -127,6 +147,14 @@ class SecurityConfigView(View):
                     security_config.lockout_duration = lockout_duration
                 if enable_2fa is not None:
                     security_config.enable_2fa = enable_2fa
+                if watermark_enabled is not None:
+                    security_config.watermark_enabled = watermark_enabled
+                if watermark_content is not None:
+                    security_config.watermark_content = watermark_content
+                if watermark_show_time is not None:
+                    security_config.watermark_show_time = watermark_show_time
+                if watermark_show_username is not None:
+                    security_config.watermark_show_username = watermark_show_username
 
                 security_config.save()
 
@@ -364,6 +392,73 @@ def cleanup_login_logs(request):
 
     except Exception as e:
         logger.error(f'清理登录日志失败: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'code': 500,
+            'message': f'服务器错误: {str(e)}'
+        })
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_watermark_config(request):
+    """获取水印配置"""
+    try:
+        # 获取安全配置
+        security_config, created = SecurityConfig.objects.get_or_create(
+            id=1,
+            defaults={
+                'min_password_length': 8,
+                'password_complexity': ['lowercase', 'number'],
+                'session_timeout': 120,
+                'max_login_attempts': 5,
+                'lockout_duration': 30,
+                'enable_2fa': False
+            }
+        )
+
+        return JsonResponse({
+            'code': 200,
+            'message': '获取水印配置成功',
+            'data': {
+                'watermark_enabled': security_config.watermark_enabled,
+                'watermark_content': security_config.watermark_content,
+                'watermark_show_time': security_config.watermark_show_time,
+                'watermark_show_username': security_config.watermark_show_username
+            }
+        })
+
+    except Exception as e:
+        logger.error(f'获取水印配置失败: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'code': 500,
+            'message': f'服务器错误: {str(e)}'
+        })
+
+
+@csrf_exempt
+@jwt_auth_required
+@require_http_methods(["GET"])
+def get_current_user_info(request):
+    """获取当前用户信息"""
+    try:
+        user = User.objects.get(user_id=request.user_id)
+
+        return JsonResponse({
+            'code': 200,
+            'message': '获取用户信息成功',
+            'data': {
+                'username': user.username,
+                'name': user.name or user.username
+            }
+        })
+
+    except User.DoesNotExist:
+        return JsonResponse({
+            'code': 404,
+            'message': '用户不存在'
+        })
+    except Exception as e:
+        logger.error(f'获取用户信息失败: {str(e)}', exc_info=True)
         return JsonResponse({
             'code': 500,
             'message': f'服务器错误: {str(e)}'

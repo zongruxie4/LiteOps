@@ -15,7 +15,7 @@ from apps.views.logs import login_logs_list, login_log_detail
 from apps.views.dashboard import DashboardStatsView, BuildTrendView, BuildDetailView, RecentBuildsView, ProjectDistributionView
 from apps.views.webhook import GitLabWebhookView
 
-from apps.views.security import SecurityConfigView, get_build_tasks_for_cleanup, cleanup_build_logs, cleanup_login_logs
+from apps.views.security import SecurityConfigView, get_build_tasks_for_cleanup, cleanup_build_logs, cleanup_login_logs, get_watermark_config, get_current_user_info
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -71,4 +71,6 @@ urlpatterns = [
     path('api/system/security/build-tasks/', get_build_tasks_for_cleanup, name='build-tasks-for-cleanup'),
     path('api/system/security/cleanup-build-logs/', cleanup_build_logs, name='cleanup-build-logs'),
     path('api/system/security/cleanup-login-logs/', cleanup_login_logs, name='cleanup-login-logs'),
+    path('api/system/watermark/', get_watermark_config, name='watermark-config'),
+    path('api/user/current/', get_current_user_info, name='current-user-info'),
 ]

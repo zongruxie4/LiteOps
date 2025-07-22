@@ -262,6 +262,10 @@ CREATE TABLE `security_config` (
   `lockout_duration` int NOT NULL,
   `enable_2fa` tinyint(1) NOT NULL,
   `update_time` datetime(6) DEFAULT NULL,
+  `watermark_content` longtext COLLATE utf8mb4_bin NOT NULL,
+  `watermark_enabled` tinyint(1) NOT NULL,
+  `watermark_show_time` tinyint(1) NOT NULL,
+  `watermark_show_username` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -356,4 +360,6 @@ INSERT INTO `role` (`id`, `role_id`, `name`, `description`, `permissions`, `crea
 -- 插入用户角色关联数据
 INSERT INTO `user_role` (`id`, `create_time`, `update_time`, `role_id`, `user_id`) VALUES (1, '2025-03-27 14:45:11.269249', '2025-03-27 14:45:11.269261', '333ec25423e04a4e96b4bb238de51cc3', '9bfef5a1ee1d4054be9727934ad112es');
 
+-- 基本设置数据
+INSERT INTO `security_config` (`id`, `min_password_length`, `password_complexity`, `session_timeout`, `max_login_attempts`, `lockout_duration`, `enable_2fa`, `update_time`, `watermark_content`, `watermark_enabled`, `watermark_show_time`, `watermark_show_username`) VALUES (1, 6, '[\"number\", \"lowercase\"]', 120, 7, 5, 0, '2025-07-22 09:47:37.053022', '胡图图不涂涂', 0, 0, 0);
 SET FOREIGN_KEY_CHECKS = 1;

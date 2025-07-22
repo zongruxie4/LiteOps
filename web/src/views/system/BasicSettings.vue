@@ -95,6 +95,71 @@
           </a-form>
 
           <!-- 分割线 -->
+          <a-divider>水印配置</a-divider>
+
+          <!-- 水印功能 -->
+          <a-form layout="vertical" v-if="hasFunctionPermission('system_basic', 'edit')">
+            <a-row :gutter="24">
+              <a-col :span="8">
+                <a-form-item label="启用水印">
+                  <a-switch
+                    v-model:checked="securityConfig.watermark_enabled"
+                    checked-children="开启"
+                    un-checked-children="关闭"
+                  />
+                  <div class="form-item-help">
+                    开启后将在页面显示水印
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="显示时间">
+                  <a-switch
+                    v-model:checked="securityConfig.watermark_show_time"
+                    checked-children="显示"
+                    un-checked-children="隐藏"
+                    :disabled="!securityConfig.watermark_enabled"
+                  />
+                  <div class="form-item-help">
+                    在水印中显示当天日期
+                  </div>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="显示用户名">
+                  <a-switch
+                    v-model:checked="securityConfig.watermark_show_username"
+                    checked-children="显示"
+                    un-checked-children="隐藏"
+                    :disabled="!securityConfig.watermark_enabled"
+                  />
+                  <div class="form-item-help">
+                    在水印中显示当前用户名
+                  </div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+
+            <a-row :gutter="24">
+              <a-col :span="24">
+                <a-form-item label="自定义水印内容">
+                  <a-textarea
+                    v-model:value="securityConfig.watermark_content"
+                    placeholder="请输入水印内容，支持多行"
+                    :rows="4"
+                    :maxLength="500"
+                    show-count
+                    :disabled="!securityConfig.watermark_enabled"
+                  />
+                  <div class="form-item-help">
+                    支持多行文本，每行一个水印。时间和用户名水印会自动添加到自定义内容中
+                  </div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-form>
+
+          <!-- 分割线 -->
           <a-divider>日志清理</a-divider>
 
           <!-- 日志清理功能 -->
@@ -391,7 +456,11 @@ const securityConfig = reactive({
   session_timeout: 120,
   max_login_attempts: 5,
   lockout_duration: 30,
-  enable_2fa: false
+  enable_2fa: false,
+  watermark_enabled: false,
+  watermark_content: '',
+  watermark_show_time: false,
+  watermark_show_username: false
 });
 
 const securityRules = {

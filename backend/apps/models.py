@@ -353,6 +353,11 @@ class SecurityConfig(models.Model):
     max_login_attempts = models.IntegerField(default=5, verbose_name='最大登录尝试次数')
     lockout_duration = models.IntegerField(default=30, verbose_name='账户锁定时间(分钟)')
     enable_2fa = models.BooleanField(default=False, verbose_name='启用双因子认证')
+    # 水印配置
+    watermark_enabled = models.BooleanField(default=True, verbose_name='启用水印')
+    watermark_content = models.TextField(default='胡图图不涂涂', verbose_name='水印内容')
+    watermark_show_time = models.BooleanField(default=False, verbose_name='显示时间水印')
+    watermark_show_username = models.BooleanField(default=False, verbose_name='显示用户名水印')
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 
     class Meta:
