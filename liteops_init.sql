@@ -304,6 +304,8 @@ CREATE TABLE `user` (
   `login_time` datetime(6) DEFAULT NULL,
   `create_time` datetime(6) DEFAULT NULL,
   `update_time` datetime(6) DEFAULT NULL,
+  `ldap_dn` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `user_type` varchar(20) COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   UNIQUE KEY `username` (`username`),
@@ -362,4 +364,7 @@ INSERT INTO `user_role` (`id`, `create_time`, `update_time`, `role_id`, `user_id
 
 -- 基本设置数据
 INSERT INTO `security_config` (`id`, `min_password_length`, `password_complexity`, `session_timeout`, `max_login_attempts`, `lockout_duration`, `enable_2fa`, `update_time`, `watermark_content`, `watermark_enabled`, `watermark_show_time`, `watermark_show_username`) VALUES (1, 6, '[\"number\", \"lowercase\"]', 120, 7, 5, 0, '2025-07-22 09:47:37.053022', '胡图图不涂涂', 0, 0, 0);
+
+-- Records of ldap_config
+INSERT INTO `ldap_config` (`id`, `enabled`, `server_host`, `server_port`, `use_ssl`, `bind_dn`, `bind_password`, `timeout`, `update_time`, `base_dn`, `user_attr_map`, `user_dn_template`, `user_search_filter`) VALUES (1, 0, '', 389, 0, '', '', 10, '2025-07-23 13:45:35.796748', '', '{\"name\": \"uid\", \"email\": \"mail\", \"username\": \"cn\"}', '', '(cn={username})');
 SET FOREIGN_KEY_CHECKS = 1;
