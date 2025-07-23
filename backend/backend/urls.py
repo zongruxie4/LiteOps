@@ -16,6 +16,7 @@ from apps.views.dashboard import DashboardStatsView, BuildTrendView, BuildDetail
 from apps.views.webhook import GitLabWebhookView
 
 from apps.views.security import SecurityConfigView, get_build_tasks_for_cleanup, cleanup_build_logs, cleanup_login_logs, get_watermark_config, get_current_user_info
+from apps.views.ldap import LDAPConfigView, LDAPTestView, LDAPStatusView, LDAPSyncView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -73,4 +74,10 @@ urlpatterns = [
     path('api/system/security/cleanup-login-logs/', cleanup_login_logs, name='cleanup-login-logs'),
     path('api/system/watermark/', get_watermark_config, name='watermark-config'),
     path('api/user/current/', get_current_user_info, name='current-user-info'),
+
+    # LDAP配置相关路由
+    path('api/system/ldap/', LDAPConfigView.as_view(), name='ldap-config'),
+    path('api/system/ldap/test/', LDAPTestView.as_view(), name='ldap-test'),
+    path('api/system/ldap/status/', LDAPStatusView.as_view(), name='ldap-status'),
+    path('api/system/ldap/sync/', LDAPSyncView.as_view(), name='ldap-sync'),
 ]

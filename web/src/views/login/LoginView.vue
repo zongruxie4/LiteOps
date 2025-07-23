@@ -38,6 +38,22 @@
             </template>
           </a-input-password>
         </a-form-item>
+        
+        <!-- LDAP认证选项 -->
+        <a-form-item v-if="ldapEnabled">
+          <div class="auth-type-selection">
+            <a-switch
+              v-model:checked="useLDAP"
+              checked-children="LDAP"
+              un-checked-children="系统"
+              @change="handleAuthTypeChange"
+            />
+            <span class="auth-type-label">
+              {{ useLDAP ? 'LDAP认证' : '系统认证' }}
+            </span>
+          </div>
+        </a-form-item>
+        
         <a-form-item>
           <a-button
             type="primary"
@@ -53,14 +69,14 @@
         </a-form-item>
       </a-form>
       <div class="footer-text">
-        <p>© 2023 LiteOps 胡图图不涂涂</p>
+        <p>© 2024 LiteOps 胡图图不涂涂</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
@@ -69,6 +85,8 @@ import { initUserPermissions } from '../../utils/permission';
 
 const router = useRouter();
 const loading = ref(false);
+const useLDAP = ref(false);
+const ldapEnabled = ref(false);
 
 const formState = reactive({
   username: '',
@@ -89,12 +107,30 @@ const rules = {
   ],
 };
 
+const handleAuthTypeChange = (checked) => {
+  console.log('认证类型变更:', checked ? 'LDAP' : '系统');
+};
+
+// 检查LDAP是否启用
+const checkLdapStatus = async () => {
+  try {
+    const response = await axios.get('/api/system/ldap/status/');
+    if (response.data.code === 200) {
+      ldapEnabled.value = response.data.data.enabled;
+    }
+  } catch (error) {
+    console.error('检查LDAP状态失败:', error);
+    ldapEnabled.value = false;
+  }
+};
+
 const handleSubmit = async (values) => {
   try {
     loading.value = true;
     const response = await axios.post('/api/login/', {
       username: values.username,
       password: values.password,
+      auth_type: useLDAP.value ? 'ldap' : 'system'
     });
 
     if (response.data.code === 200) {
@@ -117,6 +153,11 @@ const handleSubmit = async (values) => {
     loading.value = false;
   }
 };
+
+// 组件挂载时检查LDAP状态
+onMounted(() => {
+  checkLdapStatus();
+});
 </script>
 
 <style scoped>
@@ -153,6 +194,24 @@ const handleSubmit = async (values) => {
   margin-bottom: 10px;
   transition: all 0.3s ease;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+.auth-type-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.auth-type-label {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+:deep(.ant-switch-checked) {
+  background-color: #1890ff;
 }
 
 :deep(.ant-input-affix-wrapper) {

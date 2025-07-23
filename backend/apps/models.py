@@ -10,6 +10,8 @@ class User(models.Model):
     name = models.CharField(max_length=50, null=True, verbose_name='姓名')
     password = models.CharField(max_length=128, null=True, verbose_name='密码')
     email = models.EmailField(max_length=100, unique=True, null=True, verbose_name='邮箱')
+    user_type = models.CharField(max_length=20, default='system', null=True, verbose_name='用户类型')
+    ldap_dn = models.CharField(max_length=255, null=True, blank=True, verbose_name='LDAP DN')
     status = models.SmallIntegerField(null=True, verbose_name='状态')
     login_time = models.DateTimeField(null=True, verbose_name='最后登录时间')
     create_time = models.DateTimeField(auto_now_add=True, null=True, verbose_name='创建时间')
@@ -389,3 +391,29 @@ class LoginAttempt(models.Model):
 
     def __str__(self):
         return f"{self.user.username if self.user else 'Unknown'} - {self.ip_address}"
+
+
+class LDAPConfig(models.Model):
+    """
+    LDAP配置表 - 存储LDAP服务器配置信息
+    """
+    id = models.AutoField(primary_key=True)
+    enabled = models.BooleanField(default=False, verbose_name='启用LDAP认证')
+    server_host = models.CharField(max_length=255, null=True, verbose_name='LDAP服务器地址')
+    server_port = models.IntegerField(default=389, verbose_name='LDAP服务器端口')
+    use_ssl = models.BooleanField(default=False, verbose_name='使用SSL/TLS')
+    base_dn = models.CharField(max_length=255, null=True, verbose_name='Base DN')
+    bind_dn = models.CharField(max_length=255, null=True, blank=True, verbose_name='绑定DN', help_text='管理员DN，用于搜索用户')
+    bind_password = models.CharField(max_length=255, null=True, blank=True, verbose_name='绑定密码')
+    user_search_filter = models.CharField(max_length=255, default='(uid={username})', verbose_name='用户搜索过滤器')
+    user_attr_map = models.JSONField(default=dict, verbose_name='用户属性映射', help_text='LDAP属性到系统属性的映射')
+    timeout = models.IntegerField(default=10, verbose_name='连接超时时间(秒)')
+    update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
+
+    class Meta:
+        db_table = 'ldap_config'
+        verbose_name = 'LDAP配置'
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return f"LDAP配置 - {self.server_host}:{self.server_port}"

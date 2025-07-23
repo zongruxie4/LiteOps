@@ -73,6 +73,14 @@ LiteOps 是一个专注实用性的 CI/CD 平台。只解决真问题 —— 自
       <img src="image/cerdentials_kubeconfig.png" alt="凭据配置" width="90%"/>
     </td>
   </tr>
+  <tr>
+    <td align="center">
+      <img src="image/notify.png" alt="通知设置" width="90%"/>
+    </td>
+    <td align="center">
+      <img src="image/basic_ldap.png" alt="认证设置" width="70%"/>
+    </td>
+  </tr>
 </table>
 
 ## 技术架构

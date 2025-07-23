@@ -94,7 +94,6 @@
             </a-form-item>
           </a-form>
 
-          <!-- 分割线 -->
           <a-divider>水印配置</a-divider>
 
           <!-- 水印功能 -->
@@ -159,7 +158,6 @@
             </a-row>
           </a-form>
 
-          <!-- 分割线 -->
           <a-divider>日志清理</a-divider>
 
           <!-- 日志清理功能 -->
@@ -292,6 +290,277 @@
               </template>
             </template>
           </a-table>
+        </a-card>
+      </a-tab-pane>
+
+      <!-- 认证配置 -->
+      <a-tab-pane key="auth-config" tab="认证">
+        <a-card>
+          <a-form
+            ref="ldapFormRef"
+            :model="ldapConfig"
+            :rules="ldapRules"
+            layout="vertical"
+          >
+                          <a-row :gutter="24">
+                <a-col :span="24">
+                  <a-form-item>
+                    <a-switch
+                      v-model:checked="ldapConfig.enabled"
+                      checked-children="启用"
+                      un-checked-children="禁用"
+                      @change="handleLdapEnabledChange"
+                    />
+                    <span style="margin-left: 12px; font-weight: 500;">启用LDAP认证</span>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+            <template v-if="ldapConfig.enabled">
+              <a-divider>服务器配置</a-divider>
+              
+              <a-row :gutter="24">
+                <a-col :span="12">
+                  <a-form-item label="服务器地址" name="server_host">
+                    <a-input
+                      v-model:value="ldapConfig.server_host"
+                      placeholder="例如: ldap.example.com"
+                    />
+                  </a-form-item>
+                </a-col>
+                <a-col :span="6">
+                  <a-form-item label="端口" name="server_port">
+                    <a-input-number
+                      v-model:value="ldapConfig.server_port"
+                      :min="1"
+                      :max="65535"
+                      style="width: 100%"
+                    />
+                  </a-form-item>
+                </a-col>
+                <a-col :span="6">
+                  <a-form-item label="使用SSL">
+                    <a-switch v-model:checked="ldapConfig.use_ssl" />
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-row :gutter="24">
+                <a-col :span="24">
+                  <a-form-item label="Base DN" name="base_dn">
+                    <a-input
+                      v-model:value="ldapConfig.base_dn"
+                      placeholder="例如: dc=example,dc=com"
+                    />
+                    <div class="form-item-help">
+                      LDAP搜索的起始点，通常是你的域名，如: dc=company,dc=com
+                    </div>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+
+
+              <a-divider>高级配置</a-divider>
+
+              <a-row :gutter="24">
+                <a-col :span="12">
+                  <a-form-item label="绑定DN" name="bind_dn">
+                    <a-input
+                      v-model:value="ldapConfig.bind_dn"
+                      placeholder="cn=admin,dc=example,dc=com"
+                    />
+                    <div class="form-item-help">
+                      管理员账户DN，用于连接LDAP服务器搜索和认证用户
+                    </div>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="12">
+                  <a-form-item label="绑定密码" name="bind_password">
+                    <a-input-password
+                      v-model:value="ldapConfig.bind_password"
+                      placeholder="输入新密码或留空保持原密码"
+                    />
+                    <div class="form-item-help">
+                      管理员账户密码
+                    </div>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-row :gutter="24">
+                <a-col :span="18">
+                  <a-form-item label="用户搜索过滤器">
+                    <a-input
+                      v-model:value="ldapConfig.user_search_filter"
+                      placeholder="例如: (uid={username})"
+                    />
+                    <div class="form-item-help">
+                      用于搜索用户的LDAP过滤器，{username} 将被替换为实际用户名
+                    </div>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="6">
+                  <a-form-item label="连接超时(秒)">
+                    <a-input-number
+                      v-model:value="ldapConfig.timeout"
+                      :min="1"
+                      :max="60"
+                      style="width: 100%"
+                    />
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-row :gutter="24">
+                <a-col :span="24">
+                  <a-form-item label="属性映射配置" name="user_attr_map">
+                    <a-textarea
+                      v-model:value="userAttrMapJson"
+                      placeholder='示例：
+{
+  "username": "cn",
+  "name": "uid",
+  "email": "mail"
+}'
+                      :rows="6"
+                      @blur="handleAttrMapChange"
+                    />
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <a-divider>用户同步</a-divider>
+
+              <a-row :gutter="24">
+                <a-col :span="16">
+                  <a-form-item label="搜索条件">
+                    <a-input
+                      v-model:value="ldapSyncForm.searchFilter"
+                      placeholder="例如: uid=user* 或 mail=搜索email"
+                    />
+                    <div class="form-item-help">
+                      可以指定搜索条件来过滤LDAP用户，留空则搜索所有用户
+                    </div>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="8">
+                  <a-form-item label="操作">
+                    <a-button
+                      type="primary"
+                      @click="handleSearchLdapUsers"
+                      :loading="ldapSyncLoading"
+                      style="margin-right: 8px"
+                    >
+                      搜索用户
+                    </a-button>
+                    <a-button
+                      type="default"
+                      @click="handleSyncSelectedUsers"
+                      :loading="ldapSyncLoading"
+                      :disabled="selectedUsers.length === 0"
+                    >
+                      同步选中
+                    </a-button>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+
+              <!-- 搜索结果 -->
+              <div v-if="ldapUsers.length > 0">
+                <h4>搜索结果：</h4>
+                <a-table
+                  :columns="ldapUserColumns"
+                  :data-source="ldapUsers"
+                  :pagination="{ pageSize: 10 }"
+                  :row-selection="{ selectedRowKeys: selectedUsers, onChange: onSelectUsers }"
+                  row-key="username"
+                  size="small"
+                  style="margin-bottom: 16px"
+                >
+                  <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'exists'">
+                      <a-tag :color="record.exists ? 'rgba(56, 158, 13, 0.8)' : 'rgba(22,119,255,0.8)'">
+                        {{ record.exists ? '已存在' : '新用户' }}
+                      </a-tag>
+                    </template>
+                  </template>
+                </a-table>
+              </div>
+
+              <!-- 同步结果 -->
+              <div v-if="syncResult">
+                <a-alert
+                  :message="syncResult.success ? '用户同步成功' : '用户同步失败'"
+                  :description="syncResult.message"
+                  :type="syncResult.success ? 'success' : 'error'"
+                  show-icon
+                  style="margin-bottom: 16px"
+                />
+                <div v-if="syncResult.success && syncResult.synced_users">
+                  <h4>同步详情：</h4>
+                  <ul>
+                    <li v-for="user in syncResult.synced_users" :key="user.username">
+                      <strong>{{ user.username }}</strong> - {{ user.action === 'created' ? '新建' : '更新' }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <a-row v-if="ldapTestResult" :gutter="24">
+                <a-col :span="24">
+                  <a-alert
+                    :message="ldapTestResult.success ? 'LDAP连接测试成功' : 'LDAP连接测试失败'"
+                    :description="ldapTestResult.message"
+                    :type="ldapTestResult.success ? 'success' : 'error'"
+                    show-icon
+                    style="margin-bottom: 16px"
+                  />
+                  <div v-if="ldapTestResult.success && ldapTestResult.connection_info">
+                    <h4>连接信息：</h4>
+                    <a-descriptions size="small" bordered>
+                      <a-descriptions-item label="服务器">
+                        {{ ldapTestResult.connection_info.server }}
+                      </a-descriptions-item>
+                      <a-descriptions-item label="绑定DN">
+                        {{ ldapTestResult.connection_info.bind_dn }}
+                      </a-descriptions-item>
+                      <a-descriptions-item label="Base DN">
+                        {{ ldapTestResult.connection_info.base_dn }}
+                      </a-descriptions-item>
+                      <a-descriptions-item label="连接状态">
+                        {{ ldapTestResult.connection_info.connection_status }}
+                      </a-descriptions-item>
+                    </a-descriptions>
+                  </div>
+                </a-col>
+              </a-row>
+            </template>
+
+            <a-form-item>
+              <a-space>
+                <a-button
+                  type="primary"
+                  @click="saveLdapConfig"
+                  :loading="ldapConfigLoading"
+                  v-if="hasFunctionPermission('system_basic', 'edit')"
+                >
+                  保存配置
+                </a-button>
+                <a-button
+                  @click="handleLdapTest"
+                  :loading="ldapTestLoading"
+                  :disabled="!canTestConnection"
+                  v-if="hasFunctionPermission('system_basic', 'edit')"
+                >
+                  测试连接
+                </a-button>
+              </a-space>
+              <div v-if="!canTestConnection" class="form-item-help" style="margin-top: 8px;">
+                请先启用LDAP认证并完成所有必要配置，点击保存配置后再测试连接
+              </div>
+            </a-form-item>
+          </a-form>
         </a-card>
       </a-tab-pane>
     </a-tabs>
@@ -440,13 +709,134 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import axios from 'axios';
 import { hasFunctionPermission, checkPermission } from '../../utils/permission';
 
 const activeTabKey = ref('security-config');
+
+// LDAP配置
+const ldapFormRef = ref();
+const ldapConfigLoading = ref(false);
+const ldapTestLoading = ref(false);
+const ldapTestResult = ref(null);
+
+// 是否可以测试连接
+const canTestConnection = computed(() => {
+  // 是否启用且所有必要配置都已填写
+  const hasPassword = ldapConfig.bind_password && 
+                     ldapConfig.bind_password.trim() && 
+                     ldapConfig.bind_password !== '';
+  
+  return ldapConfig.enabled && 
+         hasPassword &&
+         ldapConfig.server_host &&
+         ldapConfig.server_host.trim() &&
+         ldapConfig.base_dn &&
+         ldapConfig.base_dn.trim() &&
+         ldapConfig.bind_dn &&
+         ldapConfig.bind_dn.trim();
+});
+
+const ldapConfig = reactive({
+  enabled: false,
+  server_host: '',
+  server_port: 389,
+  use_ssl: false,
+  base_dn: '',
+  bind_dn: '',
+  bind_password: '',
+  user_search_filter: '(cn={username})',
+  user_attr_map: {
+    username: 'cn',
+    name: 'uid',
+    email: 'mail'
+  },
+  timeout: 10
+});
+
+// LDAP用户同步相关
+const ldapSyncForm = reactive({
+  searchFilter: ''
+});
+
+const ldapUsers = ref([]);
+const selectedUsers = ref([]);
+const ldapSyncLoading = ref(false);
+const syncResult = ref(null);
+
+// 用户属性映射JSON字符串
+const userAttrMapJson = ref('');
+
+// LDAP用户表格列定义
+const ldapUserColumns = [
+  {
+    title: '用户名',
+    dataIndex: 'username',
+    key: 'username',
+  },
+  {
+    title: '姓名',
+    dataIndex: 'name',
+    key: 'name',
+  },
+  {
+    title: '邮箱',
+    dataIndex: 'email',
+    key: 'email',
+  },
+  {
+    title: '状态',
+    dataIndex: 'exists',
+    key: 'exists',
+  },
+];
+
+// 验证JSON格式的自定义验证器
+const validateAttrMapJson = (rule, value) => {
+  // 使用userAttrMapJson的值进行验证
+  const jsonValue = userAttrMapJson.value;
+  
+  if (!jsonValue || !jsonValue.trim()) {
+    return Promise.reject('请输入属性映射配置');
+  }
+  
+  try {
+    const parsed = JSON.parse(jsonValue);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return Promise.reject('属性映射必须是一个JSON对象');
+    }
+    
+    // 检查是否包含必要的字段
+    if (!parsed.username) {
+      return Promise.reject('属性映射必须包含 username 字段');
+    }
+    
+    return Promise.resolve();
+  } catch (error) {
+    return Promise.reject('JSON格式错误，请检查语法');
+  }
+};
+
+const ldapRules = {
+  server_host: [
+    { required: true, message: '请输入服务器地址', trigger: 'blur' }
+  ],
+  base_dn: [
+    { required: true, message: '请输入Base DN', trigger: 'blur' }
+  ],
+  bind_dn: [
+    { required: true, message: '请输入绑定DN', trigger: 'blur' }
+  ],
+  bind_password: [
+    { required: true, message: '请输入绑定密码', trigger: 'blur' }
+  ],
+  user_attr_map: [
+    { validator: validateAttrMapJson, trigger: 'blur' }
+  ]
+};
 
 // 安全配置
 const securityFormRef = ref();
@@ -495,7 +885,6 @@ const robotColumns = [
     title: '类型',
     dataIndex: 'type',
     key: 'type',
-    // width: 120,
   },
   {
     title: '机器人名称',
@@ -512,7 +901,6 @@ const robotColumns = [
     title: '安全设置',
     dataIndex: 'security_type',
     key: 'security_type',
-    // width: 120,
   },
   {
     title: '备注',
@@ -524,12 +912,10 @@ const robotColumns = [
     title: '创建时间',
     dataIndex: 'create_time',
     key: 'create_time',
-    // width: 180,
   },
   {
     title: '操作',
     key: 'action',
-    // width: 200,
     fixed: 'right',
   },
 ];
@@ -548,7 +934,6 @@ const robotForm = reactive({
   remark: '',
 });
 
-// 加载状态
 const securityLoading = ref(false);
 
 // 标签页切换
@@ -557,6 +942,8 @@ const handleTabChange = (key) => {
     loadRobotList();
   } else if (key === 'security-config') {
     loadBuildTasksList();
+  } else if (key === 'auth-config') {
+    fetchLdapConfig();
   }
 };
 
@@ -879,9 +1266,277 @@ const handleLogCleanup = async () => {
   }
 };
 
+// LDAP配置相关方法
+const fetchLdapConfig = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/system/ldap/', {
+      headers: { 'Authorization': token }
+    });
+    
+    if (response.data.code === 200) {
+      const configData = response.data.data;
+      Object.assign(ldapConfig, configData);
+      
+      if (configData.bind_password === '******') {
+        ldapConfig.bind_password = '******';  // 保持标识，表示后端有密码
+      }
+      
+      // 初始化属性映射JSON字符串
+      initUserAttrMapJson();
+    } else {
+      message.error(response.data.message || '获取LDAP配置失败');
+    }
+  } catch (error) {
+    console.error('获取LDAP配置失败:', error);
+    message.error('获取LDAP配置失败');
+  }
+};
+
+const saveLdapConfig = async () => {
+  try {
+    await ldapFormRef.value?.validate();
+    
+    // 验证属性映射JSON格式
+    try {
+      if (userAttrMapJson.value.trim()) {
+        const parsedMap = JSON.parse(userAttrMapJson.value);
+        ldapConfig.user_attr_map = parsedMap;
+      }
+    } catch (error) {
+      message.error('属性映射JSON格式错误，请检查语法');
+      return;
+    }
+    
+    ldapConfigLoading.value = true;
+    
+    // 准备发送的数据
+    const configToSave = { ...ldapConfig };
+    
+    if (configToSave.bind_password === '******') {
+      delete configToSave.bind_password;
+    }
+    
+    const token = localStorage.getItem('token');
+    const response = await axios.put('/api/system/ldap/', configToSave, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      message.success('LDAP配置保存成功');
+      // 重新获取配置保状态同步
+      await fetchLdapConfig();
+    } else {
+      message.error(response.data.message || '保存失败');
+    }
+  } catch (error) {
+    console.error('保存LDAP配置失败:', error);
+    message.error('保存失败');
+  } finally {
+    ldapConfigLoading.value = false;
+  }
+};
+
+// LDAP启用状态变化
+const handleLdapEnabledChange = (enabled) => {
+  if (!enabled) {
+    // 禁用LDAP时清除所有配置
+    ldapConfig.server_host = '';
+    ldapConfig.server_port = 389;
+    ldapConfig.use_ssl = false;
+    ldapConfig.base_dn = '';
+    ldapConfig.bind_dn = '';
+    ldapConfig.bind_password = '';
+    ldapConfig.user_search_filter = '(cn={username})';
+    ldapConfig.user_attr_map = { username: 'cn', name: 'uid', email: 'mail' };
+    ldapConfig.timeout = 10;
+    
+    // 重置属性映射JSON字符串
+    initUserAttrMapJson();
+    
+    // 清除测试结果
+    ldapTestResult.value = null;
+    syncResult.value = null;
+    ldapUsers.value = [];
+    selectedUsers.value = [];
+  }
+};
+
+// 处理属性映射JSON变化
+const handleAttrMapChange = () => {
+  try {
+    if (userAttrMapJson.value.trim()) {
+      const parsedMap = JSON.parse(userAttrMapJson.value);
+      ldapConfig.user_attr_map = parsedMap;
+    }
+  } catch (error) {
+    message.error('JSON格式错误，请检查语法');
+  }
+};
+
+// 初始化属性映射JSON字符串
+const initUserAttrMapJson = () => {
+  if (ldapConfig.user_attr_map && Object.keys(ldapConfig.user_attr_map).length > 0) {
+    userAttrMapJson.value = JSON.stringify(ldapConfig.user_attr_map, null, 2);
+  } else {
+    // 提供默认的映射配置
+    const defaultMapping = {
+      username: 'cn',
+      name: 'uid', 
+      email: 'mail'
+    };
+    userAttrMapJson.value = JSON.stringify(defaultMapping, null, 2);
+    ldapConfig.user_attr_map = defaultMapping;
+  }
+};
+
+const handleLdapTest = async () => {
+  try {
+    ldapTestLoading.value = true;
+    ldapTestResult.value = null;
+    
+    const token = localStorage.getItem('token');
+    const response = await axios.post('/api/system/ldap/test/', {}, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      ldapTestResult.value = {
+        success: true,
+        message: response.data.message,
+        connection_info: response.data.data
+      };
+    } else {
+      ldapTestResult.value = {
+        success: false,
+        message: response.data.message
+      };
+    }
+  } catch (error) {
+    console.error('LDAP测试失败:', error);
+    ldapTestResult.value = {
+      success: false,
+      message: '测试失败，请稍后重试'
+    };
+  } finally {
+    ldapTestLoading.value = false;
+  }
+};
+
+// 搜索LDAP用户
+const handleSearchLdapUsers = async () => {
+  try {
+    ldapSyncLoading.value = true;
+    syncResult.value = null;
+    
+    const token = localStorage.getItem('token');
+    const response = await axios.post('/api/system/ldap/sync/', {
+      action: 'search',
+      search_filter: ldapSyncForm.searchFilter
+    }, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      // 检查用户是否已存在
+      const existingUsers = await getExistingUsers();
+      ldapUsers.value = response.data.data.users.map(user => ({
+        ...user,
+        exists: existingUsers.includes(user.username)
+      }));
+      selectedUsers.value = [];
+      message.success(`找到${ldapUsers.value.length}个LDAP用户`);
+    } else {
+      message.error(response.data.message || '搜索用户失败');
+    }
+  } catch (error) {
+    console.error('搜索LDAP用户失败:', error);
+    message.error('搜索用户失败');
+  } finally {
+    ldapSyncLoading.value = false;
+  }
+};
+
+// 获取已存在的用户列表
+const getExistingUsers = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('/api/users/', {
+      headers: { 'Authorization': token }
+    });
+    
+    if (response.data.code === 200) {
+      return response.data.data
+        .filter(user => user.user_type === 'ldap')
+        .map(user => user.username);
+    }
+    return [];
+  } catch (error) {
+    console.error('获取已存在用户失败:', error);
+    return [];
+  }
+};
+
+// 选择用户
+const onSelectUsers = (selectedRowKeys) => {
+  selectedUsers.value = selectedRowKeys;
+};
+
+// 同步选中用户
+const handleSyncSelectedUsers = async () => {
+  if (selectedUsers.value.length === 0) {
+    message.warning('请选择要同步的用户');
+    return;
+  }
+
+  try {
+    ldapSyncLoading.value = true;
+    syncResult.value = null;
+    
+    const usersToSync = ldapUsers.value.filter(user => 
+      selectedUsers.value.includes(user.username)
+    );
+    
+    const token = localStorage.getItem('token');
+    const response = await axios.post('/api/system/ldap/sync/', {
+      action: 'sync',
+      users: usersToSync
+    }, {
+      headers: { 'Authorization': token }
+    });
+
+    if (response.data.code === 200) {
+      syncResult.value = {
+        success: true,
+        message: response.data.message,
+        synced_users: response.data.data.synced_users
+      };
+      
+      // 刷新用户列表
+      await handleSearchLdapUsers();
+    } else {
+      syncResult.value = {
+        success: false,
+        message: response.data.message
+      };
+    }
+  } catch (error) {
+    console.error('同步用户失败:', error);
+    syncResult.value = {
+      success: false,
+      message: '同步用户失败，请稍后重试'
+    };
+  } finally {
+    ldapSyncLoading.value = false;
+  }
+};
+
 onMounted(() => {
   fetchSecurityConfig();
   loadBuildTasksList();
+  if (!userAttrMapJson.value) {
+    initUserAttrMapJson();
+  }
 });
 </script>
 
@@ -941,5 +1596,13 @@ onMounted(() => {
   font-size: 12px;
   color: rgba(0, 0, 0, 0.45);
   margin-top: 4px;
+}
+
+:deep(.ant-input) {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+:deep(textarea) {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 </style> 

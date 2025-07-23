@@ -57,6 +57,7 @@ class UserView(View):
                     'email': user.email,
                     'status': user.status,
                     'roles': roles,
+                    'user_type': user.user_type,
                     'login_time': user.login_time.strftime('%Y-%m-%d %H:%M:%S') if user.login_time else None,
                     'create_time': user.create_time.strftime('%Y-%m-%d %H:%M:%S'),
                 })
@@ -188,7 +189,6 @@ class UserView(View):
                         })
                     user.email = email
                 if status is not None:
-                    # 如果是解锁操作（从0改为1），使用安全验证器的解锁方法
                     if user.status == 0 and status == 1:
                         success, message = SecurityValidator.unlock_user_account(user)
                         if not success:
@@ -196,7 +196,6 @@ class UserView(View):
                                 'code': 400,
                                 'message': message
                             })
-                    # 如果是锁定操作（从1改为0），使用安全验证器的锁定方法
                     elif user.status == 1 and status == 0:
                         success, message = SecurityValidator.lock_user_account(user)
                         if not success:
@@ -315,6 +314,7 @@ class UserProfileView(View):
                 'email': user.email,
                 'status': user.status,
                 'roles': roles,
+                'user_type': user.user_type,
                 'login_time': user.login_time.strftime('%Y-%m-%d %H:%M:%S') if user.login_time else None,
                 'create_time': user.create_time.strftime('%Y-%m-%d %H:%M:%S') if user.create_time else None,
                 'update_time': user.update_time.strftime('%Y-%m-%d %H:%M:%S') if user.update_time else None,

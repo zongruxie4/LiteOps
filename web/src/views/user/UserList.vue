@@ -40,6 +40,11 @@
               </a-tag>
             </a-space>
           </template>
+          <template v-else-if="column.key === 'user_type'">
+            <a-tag :color="record.user_type === 'ldap' ? 'rgba(56, 158, 13, 0.8)' : 'rgba(22,119,255,0.8)'">
+              {{ record.user_type === 'ldap' ? 'LDAP' : '系统' }}
+            </a-tag>
+          </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
               <a @click="showEditModal(record)">编辑</a>
@@ -87,12 +92,20 @@
           <a-input v-model:value="formState.username" :disabled="!!formState.user_id" />
         </a-form-item>
         <a-form-item label="姓名" name="name">
-          <a-input v-model:value="formState.name" />
+          <a-input 
+            v-model:value="formState.name" 
+            :disabled="formState.user_type === 'ldap'"
+          />
+          <div v-if="formState.user_type === 'ldap'" class="form-help">LDAP用户信息由LDAP服务器管理</div>
         </a-form-item>
         <a-form-item label="邮箱" name="email">
-          <a-input v-model:value="formState.email" />
+          <a-input 
+            v-model:value="formState.email" 
+            :disabled="formState.user_type === 'ldap'"
+          />
+          <div v-if="formState.user_type === 'ldap'" class="form-help">LDAP用户信息由LDAP服务器管理</div>
         </a-form-item>
-        <a-form-item label="密码" name="password">
+        <a-form-item label="密码" name="password" v-if="formState.user_type !== 'ldap'">
           <a-input-password v-model:value="formState.password" />
           <div v-if="!!formState.user_id" class="form-help">不修改请留空</div>
         </a-form-item>
@@ -147,6 +160,11 @@ const columns = [
     title: '角色',
     dataIndex: 'roles',
     key: 'roles',
+  },
+  {
+    title: '用户类型',
+    dataIndex: 'user_type',
+    key: 'user_type',
   },
   {
     title: '状态',
@@ -254,11 +272,16 @@ const formState = reactive({
   email: '',
   password: '',
   role_ids: [],
-  status: 1
+  status: 1,
+  user_type: 'system'
 });
 
 // 动态密码验证规则
 const passwordValidator = (rule, value) => {
+  // LDAP用户不需要验证密码
+  if (formState.user_type === 'ldap') {
+    return Promise.resolve();
+  }
   if (formState.user_id && !value) {
     return Promise.resolve();
   }
@@ -350,6 +373,7 @@ const showEditModal = (record) => {
   formState.name = record.name;
   formState.email = record.email;
   formState.status = record.status;
+  formState.user_type = record.user_type || 'system';
   formState.role_ids = record.roles.map(role => role.role_id);
   modalVisible.value = true;
 };
@@ -366,7 +390,8 @@ const resetForm = () => {
     email: '',
     password: '',
     role_ids: [],
-    status: 1
+    status: 1,
+    user_type: 'system'
   });
 };
 

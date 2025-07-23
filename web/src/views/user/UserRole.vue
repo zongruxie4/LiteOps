@@ -38,7 +38,7 @@
                 cancel-text="取消"
                 @confirm="handleDelete(record)"
               >
-                <a>删除</a>
+                <a-button type="link" danger>删除</a-button>
               </a-popconfirm>
               <a-divider type="vertical" />
               <a @click="showPermissionModal(record)">权限配置</a>
