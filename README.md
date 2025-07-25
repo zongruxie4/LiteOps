@@ -152,10 +152,57 @@ chmod +x start-containers.sh
 # 执行一键部署
 ./start-containers.sh
 ```
+#### 5. 不使用一键部署方式，自定义数据库
+
+##### 方案A：配置文件挂载方式（推荐）
+
+```bash
+# 1. 先启动MySQL容器（可选）
+docker run -d \
+    --name liteops-mysql \
+    -e MYSQL_ROOT_PASSWORD=your_password \
+    -p 3306:3306 \
+    mysql:8.0
+
+# 等待MySQL启动完成后导入初始化数据（会自动创建liteops数据库）
+docker exec -i liteops-mysql mysql -uroot -pyour_password < liteops_init.sql
+
+# 2. 在宿主机创建配置文件
+mkdir -p ./liteops-config
+cat > ./liteops-config/config.txt << EOF
+[client]
+host = 数据库IP  # 如果使用Docker网络，填写容器名
+port = 3306
+database = liteops
+user = root
+password = your_password  # 替换为您的实际密码
+default-character-set = utf8mb4
+EOF
+
+# 3. 启动LiteOps容器，挂载配置文件
+docker run -d \
+    --name liteops \
+    --privileged \
+    -p 80:80 \
+    -p 8900:8900 \
+    -v $(pwd)/liteops-config/config.txt:/app/backend/conf/config.txt \
+    liteops/liteops:[最新版本]
+```
+
+配置文件 `config.txt`：
+```ini
+[client]
+host = 数据库IP
+port = 3306
+database = liteops
+user = root
+password = your_password
+default-character-set = utf8mb4
+```
 
 启动脚本会自动完成以下操作：
 
-#### 5. 验证部署
+#### 6. 验证部署
 
 部署完成后，你可以通过以下方式验证：
 
@@ -227,8 +274,18 @@ cd backend
 pip3 install -r requirements.txt
 
 # 配置数据库（请先创建数据库并导入 liteops_init.sql）
-# 修改 backend/config.txt 中的数据库配置
+#可自定义修改 backend/config.txt 中的数据库配置文件
+cat backend/config.txt
+[client]
+host = 127.0.0.1  # 自定义IP
+port = 3306   # 自定义端口
+database = liteops
+user = root
+password = 1234567xx # 自定义密码
+default-character-set = utf8mb4
+```
 
+```bash
 # 启动后端服务
 python3 -m uvicorn backend.asgi:application --host 0.0.0.0 --port 8900
 ```

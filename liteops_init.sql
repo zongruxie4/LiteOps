@@ -16,6 +16,13 @@
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- 创建数据库
+-- ----------------------------
+CREATE DATABASE IF NOT EXISTS `liteops` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+USE `liteops`;
+
 -- ----------------------------
 -- Table structure for build_history
 -- ----------------------------
@@ -344,6 +351,24 @@ CREATE TABLE `user_token` (
   UNIQUE KEY `token_id` (`token_id`),
   KEY `user_token_user_id_69e1f632_fk_user_user_id` (`user_id`),
   CONSTRAINT `user_token_user_id_69e1f632_fk_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+DROP TABLE IF EXISTS `ldap_config`;
+CREATE TABLE `ldap_config` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `enabled` tinyint(1) NOT NULL,
+  `server_host` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `server_port` int NOT NULL,
+  `use_ssl` tinyint(1) NOT NULL,
+  `bind_dn` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `bind_password` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `timeout` int NOT NULL,
+  `update_time` datetime(6) DEFAULT NULL,
+  `base_dn` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `user_attr_map` json NOT NULL DEFAULT (_utf8mb3'{}'),
+  `user_dn_template` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `user_search_filter` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- ----------------------------
