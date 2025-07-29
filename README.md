@@ -311,7 +311,7 @@ npm run build
 ### 4. 访问应用
 
 - **开发模式**：
-  - 前端：http://localhost:8080
+  - 前端：http://localhost:8000
   - 后端：http://localhost:8900
   
 - **生产模式**：
