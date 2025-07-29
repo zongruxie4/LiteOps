@@ -861,18 +861,21 @@ class BuildExecuteView(View):
                         'message': 'Commit ID不能为空'
                     })
             elif env_type in ['staging', 'production']:
-                if not version:
-                    return JsonResponse({
-                        'code': 400,
-                        'message': '版本号不能为空'
-                    })
-                parts = version.split('_')
-                if len(parts) == 2 and len(parts[1]) >= 8:
-                    commit_id = parts[1]
+                if version:
+                    parts = version.split('_')
+                    if len(parts) == 2 and len(parts[1]) >= 8:
+                        commit_id = parts[1]
+                    else:
+                        return JsonResponse({
+                            'code': 400,
+                            'message': '版本号格式不正确，应为：YYYYMMDDHHmmSS_commitId'
+                        })
+                elif branch and commit_id:
+                    pass  # 参数验证通过，继续执行
                 else:
                     return JsonResponse({
                         'code': 400,
-                        'message': '版本号格式不正确，应为：YYYYMMDDHHmmSS_commitId'
+                        'message': '预发布和生产环境请选择构建方式：输入版本号或选择分支进行重新构建'
                     })
 
             if not requirement:
@@ -932,9 +935,9 @@ class BuildExecuteView(View):
                 history_id=generate_id(),
                 task=task,
                 build_number=build_number,
-                branch=branch if branch else '',  # 对于预发布和生产环境，分支为空
+                branch=branch if branch else '',
                 commit_id=commit_id,
-                version=version if version else None,  # 对于预发布和生产环境，使用传入的版本号
+                version=version if version else None,
                 status='pending',  # 初始状态为等待中
                 requirement=requirement,
                 parameter_values=parameter_values,

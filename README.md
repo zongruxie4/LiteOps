@@ -154,10 +154,10 @@ chmod +x start-containers.sh
 ```
 #### 5. 不使用一键部署方式，自定义数据库
 
-##### 方案A：配置文件挂载方式（推荐）
+##### 方案A：配置文件挂载方式
 
 ```bash
-# 1. 先启动MySQL容器（可选）
+# 1. 先启动MySQL容器（可自定义mysql）
 docker run -d \
     --name liteops-mysql \
     -e MYSQL_ROOT_PASSWORD=your_password \
@@ -246,14 +246,14 @@ docker logs liteops-mysql
 - **用户名**：admin
 - **密码**：admin123 (初始密码，可自行修改)
 
-## 📋 手动部署（源码启动）
+## 📋 源码部署
 
 如果你想从源码运行 LiteOps，可以按照以下步骤操作：
 
 ### 环境要求
 
-- **Python**：3.8+
-- **Node.js**：16+
+- **Python**：3.9+
+- **Node.js**：18+
 - **MySQL**：8.0+
 - **Git**：用于克隆源码
 
@@ -304,7 +304,7 @@ npm install
 # 开发模式启动
 npm run dev
 
-# 生产环境构建
+# 生产环境构建（dist静态文件）
 npm run build
 ```
 
@@ -316,7 +316,7 @@ npm run build
   
 - **生产模式**：
   - 配置 Nginx Web 服务器托管前端构建文件
-  - 后端继续使用 http://localhost:8900
+  - 后端接口 http://localhost:8900
 
 ### 注意事项
 

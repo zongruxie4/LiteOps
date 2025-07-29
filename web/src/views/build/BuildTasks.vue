@@ -338,12 +338,34 @@
           </a-spin>
         </a-form-item>
 
+        <!-- 预发布和生产环境的构建方式选择 -->
+        <a-form-item
+          label="构建方式"
+          required
+          v-if="isStagingOrProdEnv"
+        >
+          <a-radio-group v-model:value="buildForm.buildType" @change="handleBuildTypeChange">
+            <a-radio value="existing_version">现有版本</a-radio>
+            <a-radio value="rebuild">重新构建</a-radio>
+          </a-radio-group>
+          <div class="build-type-description">
+            <div v-if="buildForm.buildType === 'existing_version'" class="description-text">
+              <InfoCircleOutlined style="margin-right: 4px; color: #1890ff;" />
+              使用已在其它环境验证通过的版本进行部署，适用于可通过环境变量切换接口的项目
+            </div>
+            <div v-else class="description-text">
+              <InfoCircleOutlined style="margin-right: 4px; color: #ff7875;" />
+              重新从代码构建，适用于构建时需要指定不同环境接口配置的项目（如前端项目需要env指定）
+            </div>
+          </div>
+        </a-form-item>
+
         <!-- 预发布和生产环境的版本选择 -->
         <a-form-item
           label="输入版本号"
           required
-          v-if="isStagingOrProdEnv"
-          help="请输入已在测试环境验证通过的版本号，可以在测试环境构建历史中查看"
+          v-if="isStagingOrProdEnv && buildForm.buildType === 'existing_version'"
+          help="请输入已在其它环境验证通过的版本号，可以在构建历史中查看"
         >
           <a-input
             v-model:value="buildForm.version"
@@ -354,15 +376,75 @@
               <TagOutlined style="color: rgba(0, 0, 0, 0.25)" />
             </template>
             <template #suffix>
-              <a-tooltip title="版本号格式为: 年月日时分秒_提交ID前8位，可以在测试环境的构建历史中找到">
+              <a-tooltip title="版本号格式为: 年月日时分秒_提交ID前8位，可以在构建历史中找到">
                 <QuestionCircleOutlined style="color: rgba(0, 0, 0, 0.45)" />
               </a-tooltip>
             </template>
           </a-input>
           <div class="version-tip">
             <InfoCircleOutlined style="margin-right: 4px; color: #1890ff;" />
-            <span>提示: 可以去 <a @click="goToBuildHistory">构建历史</a> 页面查找测试环境最新的构建版本</span>
+            <span>提示: 可以去 <a @click="goToBuildHistory">构建历史</a> 页面查找其它环境最新的构建版本</span>
           </div>
+        </a-form-item>
+
+        <!-- 预发布和生产环境重新构建时的分支选择 -->
+        <a-form-item label="选择分支" required v-if="isStagingOrProdEnv && buildForm.buildType === 'rebuild'">
+          <a-select
+            showSearch
+            v-model:value="buildForm.branch"
+            placeholder="请选择分支"
+            :loading="branchLoading"
+            @change="handleBranchChange"
+            style="width: 100%"
+          >
+            <a-select-option
+              v-for="branch in branchList"
+              :key="branch.name"
+              :value="branch.name"
+            >
+              <span>{{ branch.name }}</span>
+              <span class="branch-commit-info">
+                <a-tag size="small">{{ branch.commit.author_name }}</a-tag>
+                {{ branch.commit.title }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <!-- 预发布和生产环境重新构建时的提交记录 -->
+        <a-form-item label="提交记录" required v-if="isStagingOrProdEnv && buildForm.buildType === 'rebuild'">
+          <a-spin :spinning="commitLoading">
+            <div class="commit-list-wrapper">
+              <a-list
+                class="commit-list"
+                :data-source="commitList"
+                size="small"
+                bordered
+              >
+                <template #renderItem="{ item }">
+                  <a-list-item>
+                    <div class="commit-item">
+                      <div class="commit-title">
+                        <span class="commit-id">{{ item.short_id }}</span>
+                        {{ item.title }}
+                      </div>
+                      <div class="commit-meta">
+                        <span class="commit-author">
+                          <UserOutlined /> {{ item.author_name }}
+                        </span>
+                        <span class="commit-time">
+                          <ClockCircleOutlined /> {{ item.created_at }}
+                        </span>
+                      </div>
+                      <div class="commit-message" v-if="item.message">
+                        {{ item.message }}
+                      </div>
+                    </div>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </div>
+          </a-spin>
         </a-form-item>
 
         <!-- 构建参数选择 -->
@@ -448,6 +530,7 @@ const buildForm = reactive({
   commit_id: '',
   requirement: '',
   version: '',
+  buildType: 'existing_version',
   parameterValues: {},
 });
 
@@ -726,6 +809,7 @@ const handleBuild = async (record) => {
   buildForm.commit_id = '';
   buildForm.requirement = '';
   buildForm.version = '';
+  buildForm.buildType = 'existing_version';
   buildForm.parameterValues = {};
 
   // 初始化参数默认值
@@ -1050,6 +1134,21 @@ const handleBranchChange = async (branch) => {
   }
 };
 
+// 处理构建方式变更
+const handleBuildTypeChange = async () => {
+  if (buildForm.buildType === 'rebuild') {
+    buildForm.version = '';
+    if (isStagingOrProdEnv.value) {
+      await loadBranches();
+    }
+  } else {
+    buildForm.branch = '';
+    buildForm.commit_id = '';
+    branchList.value = [];
+    commitList.value = [];
+  }
+};
+
 // 连接SSE
 const connectSSE = (taskId, buildNumber, preserveLog = false) => {
   const protocol = window.location.protocol;
@@ -1218,16 +1317,24 @@ const confirmBuild = async () => {
     return;
   }
 
-  // 预发布和生产环境需要输入版本号
+  // 预发布和生产环境的验证逻辑
   if (isStagingOrProdEnv.value) {
-    if (!buildForm.version) {
-      message.warning('请输入版本号');
-      return;
-    }
+    if (buildForm.buildType === 'existing_version') {
+      // 使用已验证版本，需要输入版本号
+      if (!buildForm.version) {
+        message.warning('请输入版本号');
+        return;
+      }
 
-    if (!validateVersion(buildForm.version)) {
-      message.warning('版本号格式不正确，请输入类似 "20250320112507_029e149e" 的格式（年月日时分秒_提交ID前8位）');
-      return;
+      if (!validateVersion(buildForm.version)) {
+        message.warning('版本号格式不正确，请输入类似 "20250320112507_029e149e" 的格式（年月日时分秒_提交ID前8位）');
+        return;
+      }
+    } else if (buildForm.buildType === 'rebuild') {
+      if (!buildForm.branch) {
+        message.warning('请选择分支');
+        return;
+      }
     }
   }
 
@@ -1256,7 +1363,12 @@ const confirmBuild = async () => {
       requestData.branch = buildForm.branch;
       requestData.commit_id = buildForm.commit_id;
     } else if (isStagingOrProdEnv.value) {
-      requestData.version = buildForm.version;
+      if (buildForm.buildType === 'existing_version') {
+        requestData.version = buildForm.version;
+      } else if (buildForm.buildType === 'rebuild') {
+        requestData.branch = buildForm.branch;
+        requestData.commit_id = buildForm.commit_id;
+      }
     }
 
     const response = await axios.post('/api/build/tasks/build', requestData, {
@@ -1273,6 +1385,8 @@ const confirmBuild = async () => {
         number: response.data.data.build_number,
         status: 'running'
       };
+
+      selectedHistoryId.value = response.data.data.history_id;
 
       // 使用返回的build_number连接SSE
       connectSSE(selectedTask.value.task_id, response.data.data.build_number);
@@ -1758,5 +1872,17 @@ const handleViewBuildDetail = (record) => {
   font-size: 12px;
   color: rgba(0, 0, 0, 0.45);
   margin-top: 4px;
+}
+
+.build-type-description {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.description-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style>

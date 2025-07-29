@@ -75,12 +75,7 @@
             <a-space>
               <a-button type="link" class="action-button" @click="handleEnvironmentDetail(record)">查看</a-button>
               <!-- <a-button type="link" class="action-button" @click="handleEditEnvironment(record)">编辑</a-button> -->
-              <a-popconfirm
-                title="确定要删除这个环境吗？"
-                @confirm="handleDeleteEnvironment(record)"
-              >
-                <a-button type="link" danger>删除</a-button>
-              </a-popconfirm>
+              <a-button type="link" danger @click="handleDeleteEnvironment(record)">删除</a-button>
             </a-space>
           </template>
         </template>
@@ -142,7 +137,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import axios from 'axios';
 import { checkPermission, hasFunctionPermission } from '../../utils/permission';
@@ -353,27 +348,40 @@ const handleDeleteEnvironment = async (record) => {
   if (!checkPermission('environment', 'delete')) {
     return;
   }
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axios.delete('/api/environments/', {
-      headers: {
-        'Authorization': token
-      },
-      data: {
-        environment_id: record.environment_id
+  
+  // 显示确认对话框，警告可能的影响
+  Modal.confirm({
+    title: '确认删除环境',
+    content: `确定要删除环境"${record.name}"吗？\n\n⚠️ 注意：删除环境将同时删除该环境下的所有关联构建任务，此操作不可恢复，请谨慎操作！`,
+    okText: '确认删除',
+    okType: 'primary',
+    cancelText: '取消',
+    width: 450,
+    style: { top: '20vh' },
+    async onOk() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.delete('/api/environments/', {
+          headers: {
+            'Authorization': token
+          },
+          data: {
+            environment_id: record.environment_id
+          }
+        });
+        
+        if (response.data.code === 200) {
+          message.success('删除环境成功');
+          fetchEnvironments();
+        } else {
+          message.error(response.data.message || '删除环境失败');
+        }
+      } catch (error) {
+        message.error('删除环境失败');
+        console.error('Delete environment error:', error);
       }
-    });
-    
-    if (response.data.code === 200) {
-      message.success('删除环境成功');
-      fetchEnvironments();
-    } else {
-      message.error(response.data.message || '删除环境失败');
     }
-  } catch (error) {
-    message.error('删除环境失败');
-    console.error('Delete environment error:', error);
-  }
+  });
 };
 
 const handleSearch = () => {

@@ -358,9 +358,15 @@ class Builder:
             # 获取环境类型
             environment_type = self.task.environment.type if self.task.environment else None
 
-            # 根据环境类型决定是否需要克隆代码
-            if environment_type in ['development', 'testing']:
-                # 只在开发和测试环境克隆代码
+            # 根据是否有分支信息决定是否需要克隆代码
+            should_clone_code = (
+                environment_type in ['development', 'testing'] or 
+                (environment_type in ['staging', 'production'] and self.history.branch)
+            )
+
+            if should_clone_code:
+                # 克隆代码
+                self.send_log(f"开始克隆代码，分支: {self.history.branch}", "Git Clone")
                 clone_start_time = time.time()
                 if not self.clone_repository():
                     self._update_build_stats(False)  # 更新失败统计
@@ -377,9 +383,8 @@ class Builder:
                     'duration': str(int(time.time() - clone_start_time))
                 })
             else:
-                pass
-                # self.send_log(f"预发布/生产环境构建，跳过代码克隆，直接使用版本: {self.version}", "Environment")
-
+                # 预发布/生产环境使用版本模式，不克隆代码
+                # self.send_log(f"预发布/生产环境版本模式，使用版本: {self.history.version}", "Environment")
                 # 创建构建目录
                 os.makedirs(self.build_path, exist_ok=True)
 
