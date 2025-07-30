@@ -273,7 +273,7 @@ host = 数据库IP  # 如果使用Docker网络，填写容器名
 port = 3306
 database = liteops
 user = root
-password = your_password  # 替换为您的实际密码
+password = your_password  # 替换为你的实际密码
 default-character-set = utf8mb4
 EOF
 
@@ -336,6 +336,36 @@ LiteOps目前处于很多功能未完善状态，虽然核心功能已经初步�
 - **功能需求**：你希望看到哪些新功能或改进？
 - **用户体验**：界面和操作流程是否符合你的使用习惯？
 - **实际场景**：在你的工作环境中，有哪些CI/CD痛点尚未解决？
+
+## ☕ 请作者喝咖啡
+
+如果 LiteOps 对你有帮助，欢迎请作者喝杯咖啡，你的支持是我持续更新的动力！
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="image/alipay.jpg" alt="支付宝" width="200"/>
+        <br/>
+        <strong>支付宝</strong>
+      </td>
+      <td align="center">
+        <img src="image/wechat.jpg" alt="微信" width="200"/>
+        <br/>
+        <strong>微信</strong>
+      </td>
+    </tr>
+  </table>
+</div>
+
+## 🎉 感谢各位支持LiteOps
+
+<div style="display: inline-block; text-align: center; margin: 10px;">
+  <a href="https://github.com/willis-yang" style="text-decoration: none;">
+    <img src="https://avatars.githubusercontent.com/u/42925818?v=4" width="50" alt="willis-yang" style="border-radius: 50%; display: block;"/>
+    <span style="font-size: 14px; margin-top: 5px; display: block;">willis-yang</span>
+  </a>
+</div>
 
 ## 📞 联系我
 
