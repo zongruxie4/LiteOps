@@ -7,6 +7,17 @@ set -euo pipefail
 
 echo "🐳 启动 Docker in Docker 环境..."
 
+# 检测是否为容器重启
+RESTART_FLAG="/tmp/.docker-restart-flag"
+if [ -f "$RESTART_FLAG" ]; then
+    echo "🔄 检测到容器重启，执行清理..."
+    CONTAINER_RESTART=true
+else
+    echo "🆕 首次启动容器"
+    CONTAINER_RESTART=false
+    touch "$RESTART_FLAG"
+fi
+
 # 检查是否在特权模式下运行
 if [ ! -w /sys/fs/cgroup ]; then
     echo "❌ 错误: 容器必须在特权模式下运行才能使用 Docker in Docker"
@@ -45,23 +56,48 @@ cat > /etc/docker/daemon.json << 'EOF'
     "insecure-registries": [],
     "exec-opt": ["native.cgroupdriver=cgroupfs"],
     "max-concurrent-downloads": 3,
-    "max-concurrent-uploads": 3
+    "max-concurrent-uploads": 3,
+    "live-restore": false
 }
 EOF
 
 # 启动轻量级Docker daemon
 echo "🚀 启动 Docker daemon (轻量级CI/CD模式)..."
 
-# 清理可能存在的旧进程
-pkill dockerd 2>/dev/null || true
+# 清理存在的旧进程和文件
+echo "🧹 清理旧的Docker进程和文件..."
+# 停止所有Docker相关进程
+pkill -f dockerd 2>/dev/null || true
+pkill -f containerd 2>/dev/null || true
+pkill -f docker-proxy 2>/dev/null || true
+
+# 等待进程完全停止
+sleep 2
+
+# 强制清理残留进程
+pkill -9 -f dockerd 2>/dev/null || true
+pkill -9 -f containerd 2>/dev/null || true
+pkill -9 -f docker-proxy 2>/dev/null || true
+
+# 清理所有相关文件和socket
 rm -f /var/run/docker.sock /var/run/docker.pid 2>/dev/null || true
+rm -f /var/run/containerd/containerd.sock 2>/dev/null || true
+rm -f /var/run/containerd/containerd.pid 2>/dev/null || true
+rm -rf /var/run/containerd/* 2>/dev/null || true
+
+# 清理可能的锁文件
+rm -f /var/lib/docker/.docker-lock 2>/dev/null || true
+rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db-lock 2>/dev/null || true
+
+# 重新创建必要的目录
+mkdir -p /var/run/containerd
+mkdir -p /var/lib/containerd
 
 # 启动dockerd 
 dockerd \
     --host=unix:///var/run/docker.sock \
     --userland-proxy=false \
     --experimental=false \
-    --live-restore=false \
     --iptables=false \
     --ip-forward=false \
     --pidfile=/var/run/docker.pid \

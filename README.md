@@ -110,143 +110,7 @@ LiteOps采用前后端分离的架构设计：
 2. 减少人为操作错误，标准化流程  
 3. 提供清晰的构建状态和日志，出问题能快速定位
 
-## 🚀 快速部署
-
-#### 1. 获取部署文件
-
-你需要获取以下部署文件：
-
-- `start-containers.sh` - 一键部署脚本
-- `liteops_init.sql` - 数据库初始化文件
-- `liteops` - Docker镜像
-
-#### 2. 获取Docker镜像
-
-```bash
-# 拉取LiteOps镜像
-docker pull liteops/liteops:[最新版本号]
-```
-
-#### 3. 准备部署文件
-
-创建部署目录并放置必要文件：
-
-```bash
-# 创建部署目录
-mkdir liteops-deploy
-cd liteops-deploy
-
-# 将以下文件放入此目录：
-# - start-containers.sh
-# - liteops_init.sql
-```
-
-#### 4. 一键部署
-
-使用提供的启动脚本进行自动化部署：
-
-```bash
-# 给启动脚本执行权限
-chmod +x start-containers.sh
-
-# 执行一键部署
-./start-containers.sh
-```
-#### 5. 不使用一键部署方式，自定义数据库
-
-##### 方案A：配置文件挂载方式
-
-```bash
-# 1. 先启动MySQL容器（可自定义mysql）
-docker run -d \
-    --name liteops-mysql \
-    -e MYSQL_ROOT_PASSWORD=your_password \
-    -p 3306:3306 \
-    mysql:8.0
-
-# 等待MySQL启动完成后导入初始化数据（会自动创建liteops数据库）
-docker exec -i liteops-mysql mysql -uroot -pyour_password < liteops_init.sql
-
-# 2. 在宿主机创建配置文件
-mkdir -p ./liteops-config
-cat > ./liteops-config/config.txt << EOF
-[client]
-host = 数据库IP  # 如果使用Docker网络，填写容器名
-port = 3306
-database = liteops
-user = root
-password = your_password  # 替换为您的实际密码
-default-character-set = utf8mb4
-EOF
-
-# 3. 启动LiteOps容器，挂载配置文件
-docker run -d \
-    --name liteops \
-    --privileged \
-    -p 80:80 \
-    -p 8900:8900 \
-    -v $(pwd)/liteops-config/config.txt:/app/backend/conf/config.txt \
-    liteops/liteops:[最新版本]
-```
-
-配置文件 `config.txt`：
-```ini
-[client]
-host = 数据库IP
-port = 3306
-database = liteops
-user = root
-password = your_password
-default-character-set = utf8mb4
-```
-
-启动脚本会自动完成以下操作：
-
-#### 6. 验证部署
-
-部署完成后，你可以通过以下方式验证：
-
-```bash
-# 检查容器状态
-docker ps
-
-# 检查日志
-docker logs liteops
-🐳 启动 Docker in Docker 环境...
-🚀 启动 Docker daemon (轻量级CI/CD模式)...
-⏳ 等待 Docker daemon 启动...
-time="2025-06-13T02:15:10.086745884Z" level=warning msg="CDI setup error /etc/cdi: failed to monitor for changes: no such file or directory"
-time="2025-06-13T02:15:10.086771075Z" level=warning msg="CDI setup error /var/run/cdi: failed to monitor for changes: no such file or directory"
-✅ Docker daemon 启动成功
-🔍 验证 Docker 功能...
-✅ Docker daemon 版本: 28.2.2
-✅ 存储驱动: vfs
-🎉 Docker in Docker 环境启动完成 (轻量级CI/CD模式)
-Starting nginx...
-Starting nginx: nginx.
-Starting backend service...
-INFO:     Started server process [188]
-INFO:     Waiting for application startup.
-INFO:     ASGI 'lifespan' protocol appears unsupported.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8900 (Press CTRL+C to quit)
-docker logs liteops-mysql
-```
-
-### 访问应用
-
-部署成功后，你可以通过以下地址访问：
-
-- **前端界面**：http://localhost
-- **后端API**：http://localhost:8900/api/
-- **MySQL数据库**：localhost:3306
-
-### 默认登录信息
-
-- **用户名**：admin
-- **密码**：admin123 (初始密码，可自行修改)
-
-## 📋 源码部署
+## 📋 源码部署 （推荐）
 
 如果你想从源码运行 LiteOps，可以按照以下步骤操作：
 
@@ -308,7 +172,26 @@ npm run dev
 npm run build
 ```
 
-### 4. 访问应用
+### 4. 一键启动脚本（可选）
+
+为了方便启动，我提供了一个启动脚本来同时启动前后端服务：
+
+```bash
+# 给启动脚本执行权限
+chmod +x start.sh
+
+# 执行一键启动（同时启动前端和后端）
+./start.sh
+```
+
+启动脚本会：
+- 检查端口占用情况（8900、8000端口）
+- 自动安装缺失的依赖
+- 自动启动后端服务（端口8900）
+- 自动启动前端开发服务器（端口8000）
+- 支持优雅停止（Ctrl+C时自动清理进程）
+
+### 5. 访问应用
 
 - **开发模式**：
   - 前端：http://localhost:8000
@@ -322,6 +205,123 @@ npm run build
 
 - 确保 MySQL 服务正常运行，并已导入初始化 SQL 文件
 - 修改前端 API 地址配置以匹配后端服务地址
+
+## 🚀 Docker快速部署（比较臃肿，使用了DinD模式，懂哥可自定义Dockerfile构建）
+
+如果你希望快速体验LiteOps而不想配置开发环境，可以使用Docker方式部署：
+
+### 1. 获取部署文件
+
+你需要获取以下部署文件：
+
+- `start-containers.sh` - 一键部署脚本
+- `liteops_init.sql` - 数据库初始化文件
+- `liteops` - Docker镜像
+
+### 2. 获取Docker镜像
+
+```bash
+# 拉取LiteOps镜像
+docker pull liteops/liteops:[最新版本号]
+```
+
+### 3. 准备部署文件
+
+创建部署目录并放置必要文件：
+
+```bash
+# 创建部署目录
+mkdir liteops-deploy
+cd liteops-deploy
+
+# 将以下文件放入此目录：
+# - start-containers.sh
+# - liteops_init.sql
+```
+
+### 4. 一键部署
+
+使用提供的启动脚本进行自动化部署：
+
+```bash
+# 给启动脚本执行权限
+chmod +x start-containers.sh
+
+# 执行一键部署
+./start-containers.sh
+```
+### 5. 不使用一键部署方式，自定义数据库
+
+#### 方案A：配置文件挂载方式
+
+```bash
+# 1. 先启动MySQL容器（可自定义mysql）
+docker run -d \
+    --name liteops-mysql \
+    -e MYSQL_ROOT_PASSWORD=your_password \
+    -p 3306:3306 \
+    mysql:8.0
+
+# 等待MySQL启动完成后导入初始化数据（会自动创建liteops数据库）
+docker exec -i liteops-mysql mysql -uroot -pyour_password < liteops_init.sql
+
+# 2. 在宿主机创建配置文件
+mkdir -p ./liteops-config
+cat > ./liteops-config/config.txt << EOF
+[client]
+host = 数据库IP  # 如果使用Docker网络，填写容器名
+port = 3306
+database = liteops
+user = root
+password = your_password  # 替换为您的实际密码
+default-character-set = utf8mb4
+EOF
+
+# 3. 启动LiteOps容器，挂载配置文件
+docker run -d \
+    --name liteops \
+    --privileged \
+    -p 80:80 \
+    -p 8900:8900 \
+    -v $(pwd)/liteops-config/config.txt:/app/backend/conf/config.txt \
+    liteops/liteops:[最新版本]
+```
+
+配置文件 `config.txt`：
+```ini
+[client]
+host = 数据库IP
+port = 3306
+database = liteops
+user = root
+password = your_password
+default-character-set = utf8mb4
+```
+
+### 6. 验证部署
+
+部署完成后，你可以通过以下方式验证：
+
+```bash
+# 检查容器状态
+docker ps
+
+# 检查日志
+docker logs liteops
+```
+
+### 访问应用
+
+部署成功后，你可以通过以下地址访问：
+
+- **前端界面**：http://localhost
+- **后端API**：http://localhost:8900/api/
+- **MySQL数据库**：localhost:3306
+
+### 默认登录信息
+
+- **用户名**：admin
+- **密码**：admin123 (初始密码，可自行修改)
 
 ## 项目当前状态
 
