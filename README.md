@@ -283,7 +283,7 @@ docker run -d \
     --privileged \
     -p 80:80 \
     -p 8900:8900 \
-    -v $(pwd)/liteops-config/config.txt:/app/backend/conf/config.txt \
+    -v $(pwd)/liteops-config/config.txt:/app/conf/config.txt \
     liteops/liteops:[最新版本]
 ```
 
