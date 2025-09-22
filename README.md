@@ -360,11 +360,19 @@ LiteOps目前处于很多功能未完善状态，虽然核心功能已经初步�
 
 ## 🎉 感谢各位支持LiteOps
 
-<div style="display: inline-block; text-align: center; margin: 10px;">
-  <a href="https://github.com/willis-yang" style="text-decoration: none;">
-    <img src="https://avatars.githubusercontent.com/u/42925818?v=4" width="50" alt="willis-yang" style="border-radius: 50%; display: block;"/>
-    <span style="font-size: 14px; margin-top: 5px; display: block;">willis-yang</span>
-  </a>
+<div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0;">
+  <div style="text-align: center;">
+    <a href="https://github.com/willis-yang" style="text-decoration: none;">
+      <img src="https://avatars.githubusercontent.com/u/42925818?v=4" width="50" alt="willis-yang" style="border-radius: 50%; display: block; margin: 0 auto;"/>
+      <span style="font-size: 14px; margin-top: 5px; display: block;">willis-yang</span>
+    </a>
+  </div>
+  <div style="text-align: center;">
+    <a href="https://github.com/Lihy6472" style="text-decoration: none;">
+      <img src="https://avatars.githubusercontent.com/u/116717391?v=4" width="50" alt="Lihy6472" style="border-radius: 50%; display: block; margin: 0 auto;"/>
+      <span style="font-size: 14px; margin-top: 5px; display: block;">Lihy6472</span>
+    </a>
+  </div>
 </div>
 
 ## 📞 联系我
