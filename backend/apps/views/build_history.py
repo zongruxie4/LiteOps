@@ -17,19 +17,21 @@ class BuildHistoryView(View):
     def _get_stage_status_from_log(self, log: str, stage_name: str, overall_status: str = None) -> str:
         """从日志中获取指定阶段的状态"""
         if not log:
-            return 'failed'
+            return 'pending'
         
         # 处理特殊阶段：Git Clone
         if stage_name == 'Git Clone':
             # Git Clone 阶段使用 [Git Clone] 格式
             if '[Git Clone]' not in log:
-                return 'failed'
+                return 'pending'
             
             # 检查是否有完成标记
             if '[Git Clone] 代码克隆完成' in log:
                 return 'success'
             elif overall_status == 'terminated':
                 return 'terminated'
+            elif overall_status in ['running', 'pending']:
+                return 'running'
             else:
                 return 'failed'
         
@@ -49,14 +51,19 @@ class BuildHistoryView(View):
                 # 没有该阶段的日志，说明还没开始执行就被终止了
                 return 'terminated'
         
+        # 检查阶段是否开始执行
         if stage_start_pattern not in log:
-            return 'failed'  # 阶段未开始执行
+            return 'pending'
         
         # 检查阶段是否完成
         if stage_complete_pattern in log:
             return 'success'  # 阶段成功完成
         else:
-            return 'failed'  # 阶段开始了但没有完成
+            # 阶段已开始但还没完成，根据整体状态判断
+            if overall_status in ['running', 'pending']:
+                return 'running'
+            else:
+                return 'failed'
 
     @method_decorator(jwt_auth_required)
     def get(self, request):
