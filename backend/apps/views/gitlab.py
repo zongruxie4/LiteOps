@@ -44,7 +44,21 @@ def get_gitlab_project(repository, git_token=None):
         repository_parts = repository.split('/')
         project_path = '/'.join(repository_parts[3:])  # 获取group/project部分
         project_path = project_path.replace('.git', '')
-        return gl.projects.get(project_path)
+        
+        # 对项目路径进行URL编码
+        import urllib.parse
+        encoded_path = urllib.parse.quote(project_path, safe='')
+        
+        try:
+            # 使用URL编码的路径
+            return gl.projects.get(encoded_path)
+        except gitlab.exceptions.GitlabGetError:
+            # 失败，通过搜索项目名称获取项目id
+            projects = gl.projects.list(search=project_path.split('/')[-1])
+            for project in projects:
+                if project.path_with_namespace == project_path:
+                    return gl.projects.get(project.id)
+            raise gitlab.exceptions.GitlabGetError(f"Project {project_path} not found")
     except Exception as e:
         logger.error(f'获取GitLab项目失败: {str(e)}', exc_info=True)
         raise
